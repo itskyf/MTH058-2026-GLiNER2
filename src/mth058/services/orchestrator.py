@@ -7,7 +7,7 @@ process incident reports.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from mth058.models import Incident
 
@@ -47,7 +47,7 @@ class Orchestrator:
     def run_analysis(
         self,
         text: str,
-        config: dict[str, Any],
+        config: dict[str, list[str]],
     ) -> tuple[Incident, list[Incident]]:
         """Performs full analysis on the provided incident text.
 

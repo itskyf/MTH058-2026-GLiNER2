@@ -12,10 +12,16 @@ from mth058.services.extractor import ExtractorService
 def mock_model() -> MagicMock:
     """Provides a mocked GLiNER model for testing."""
     model = MagicMock()
-    # Mocking the extract_entities method
-    model.extract_entities.return_value = [
-        {"start": 0, "end": 8, "label": "PERSON", "text": "John Doe", "score": 0.99},
-    ]
+    # Mocking the extract_entities method with new return format
+    model.extract_entities.return_value = {
+        "entities": {
+            "PERSON": [{"text": "John Doe", "confidence": 0.99, "start": 0, "end": 8}],
+        },
+    }
+    # Mocking classify_text for classification
+    model.classify_text.return_value = {
+        "category": {"label": "Critical", "confidence": 0.95},
+    }
     return model
 
 
@@ -46,11 +52,6 @@ def test_extractor_chunking_via_public_api(mock_model: MagicMock) -> None:
 
 def test_classifier_service_classify(mock_model: MagicMock) -> None:
     """Test text classification using GLiNER."""
-    # Mock specific return for classification
-    mock_model.extract_entities.return_value = [
-        {"label": "Critical", "score": 0.95},
-    ]
-
     service = ClassifierService(model=mock_model)
     text = "There is a massive database outage!"
     labels = ["Low", "Medium", "High", "Critical"]
@@ -58,4 +59,4 @@ def test_classifier_service_classify(mock_model: MagicMock) -> None:
     result = service.classify(text, labels)
 
     assert result == "Critical"
-    mock_model.extract_entities.assert_called_once()
+    mock_model.classify_text.assert_called_once()

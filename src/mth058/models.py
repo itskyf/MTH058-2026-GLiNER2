@@ -4,8 +4,6 @@ This module defines the data structures for entities, incidents, and UI-
 friendly incident cards.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -25,6 +23,34 @@ class Entity(BaseModel):
     start: int
     end: int
     score: float
+
+
+class GlinerMatch(BaseModel):
+    """Internal model for GLiNER2 match results."""
+
+    text: str
+    confidence: float
+    start: int
+    end: int
+
+
+class GlinerEntityResults(BaseModel):
+    """Internal model for GLiNER2 entity extraction results."""
+
+    entities: dict[str, list[GlinerMatch]]
+
+
+class GlinerClassification(BaseModel):
+    """Internal model for GLiNER2 classification results."""
+
+    label: str
+    confidence: float
+
+
+class GlinerClassificationResults(BaseModel):
+    """Internal model for GLiNER2 classification results dictionary."""
+
+    category: str | GlinerClassification
 
 
 class Incident(BaseModel):
@@ -65,7 +91,7 @@ class IncidentContext(BaseModel):
     """
 
     text: str
-    config: dict[str, Any] = Field(default_factory=dict)
+    config: dict[str, list[str]] = Field(default_factory=dict)
     incident: Incident | None = None
 
 

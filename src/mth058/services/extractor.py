@@ -10,7 +10,7 @@ from functools import lru_cache
 
 from gliner2 import GLiNER2
 
-from mth058.models import Entity
+from mth058.models import Entity, GlinerEntityResults
 
 
 @lru_cache(maxsize=1)
@@ -84,27 +84,38 @@ class ExtractorService:
 
         current_offset = 0
         for chunk in chunks:
-            # The model returns a list of dictionaries
-            # Each dict has: 'start', 'end', 'label', 'text', 'score'
-            # threshold is set to 0.5 to balance precision/recall
-            predictions = self.model.extract_entities(chunk, labels, threshold=0.5)
+            # The model returns a dict {'entities': {label: [matches]}}
+            # Each match is a dict with 'text', 'start', 'end', 'confidence'
+            # because we pass include_confidence=True and include_spans=True
+            results_dict = self.model.extract_entities(
+                chunk,
+                labels,
+                threshold=0.5,
+                include_confidence=True,
+                include_spans=True,
+            )
 
-            for pred in predictions:
-                # Adjust start/end positions based on current_offset
-                entity = Entity(
-                    label=pred["label"],
-                    text=pred["text"],
-                    start=pred["start"] + current_offset,
-                    end=pred["end"] + current_offset,
-                    score=float(pred["score"]),
-                )
+            # Use Pydantic model for static typing instead of raw string keys
+            results = GlinerEntityResults.model_validate(results_dict)
+            entity_dict = results.entities
 
-                # Basic deduplication for overlapping chunks
-                if not any(
-                    e.text == entity.text and e.start == entity.start
-                    for e in all_entities
-                ):
-                    all_entities.append(entity)
+            for label, entities in entity_dict.items():
+                for pred in entities:
+                    # Adjust start/end positions based on current_offset
+                    entity = Entity(
+                        label=label,
+                        text=pred.text,
+                        start=pred.start + current_offset,
+                        end=pred.end + current_offset,
+                        score=pred.confidence,
+                    )
+
+                    # Basic deduplication for overlapping chunks
+                    if not any(
+                        e.text == entity.text and e.start == entity.start
+                        for e in all_entities
+                    ):
+                        all_entities.append(entity)
 
             current_offset += self.chunk_size - self.chunk_overlap
 

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from mth058.models import GlinerClassificationResults
+
 if TYPE_CHECKING:
     from gliner2 import GLiNER2
 
@@ -38,13 +40,22 @@ class ClassifierService:
         if not text or not labels:
             return "Unknown"
 
-        # GLiNER can be used for classification by treating labels as entities
-        # to be extracted from the entire text.
-        predictions = self.model.extract_entities(text, labels, threshold=threshold)
+        # Use classify_text for efficient categorization
+        results_dict = self.model.classify_text(
+            text,
+            {"category": labels},
+            threshold=threshold,
+            include_confidence=True,
+        )
 
-        if not predictions:
-            return "Unknown"
+        # Use Pydantic model for static typing instead of raw string keys
+        results = GlinerClassificationResults.model_validate(results_dict)
+        result = results.category
 
-        # Sort by score descending and return the best label
-        sorted_preds = sorted(predictions, key=lambda x: x["score"], reverse=True)
-        return sorted_preds[0]["label"]
+        if isinstance(result, str):
+            return result or "Unknown"
+
+        if result.confidence >= threshold:
+            return result.label
+
+        return "Unknown"

@@ -37,11 +37,11 @@
 
 **Tasks:**
 
-- [ ] Step 1: Write failing test for fixture loading
-- [ ] Step 2: Define Pydantic models in `models.py`
-- [ ] Step 3: Implement fixture loading logic in `fixtures.py` using `importlib.resources`
-- [ ] Step 4: Run test: `uv run pytest tests/test_data.py`
-- [ ] Step 5: Commit
+- [x] Step 1: Write failing test for fixture loading
+- [x] Step 2: Define Pydantic models in `models.py`
+- [x] Step 3: Implement fixture loading logic in `fixtures.py` using `importlib.resources`
+- [x] Step 4: Run test: `uv run pytest tests/test_data.py`
+- [x] Step 5: Commit
 
 ### Task 2: Extractor and Classifier Services (GLiNER2)
 
@@ -53,12 +53,12 @@
 
 **Tasks:**
 
-- [ ] Step 1: Write failing test for extraction
-- [ ] Step 2: Implement `ExtractorService` with GLiNER2 and chunking
-- [ ] Step 3: Write failing test for classification
-- [ ] Step 4: Implement `ClassifierService`
-- [ ] Step 5: Run tests: `uv run pytest tests/test_services.py`
-- [ ] Step 6: Commit
+- [x] Step 1: Write failing test for extraction
+- [x] Step 2: Implement `ExtractorService` with GLiNER2 and chunking
+- [x] Step 3: Write failing test for classification
+- [x] Step 4: Implement `ClassifierService`
+- [x] Step 5: Run tests: `uv run pytest tests/test_services.py`
+- [x] Step 6: Commit
 
 ### Task 3: Redactor and Similarity Services
 
@@ -70,11 +70,11 @@
 
 **Tasks:**
 
-- [ ] Step 1: Write failing test for PII redaction
-- [ ] Step 2: Implement `RedactorService` with manual verification mode
-- [ ] Step 3: Implement `SimilarityService` using label overlap
-- [ ] Step 4: Run tests: `uv run pytest tests/test_triage_logic.py`
-- [ ] Step 5: Commit
+- [x] Step 1: Write failing test for PII redaction
+- [x] Step 2: Implement `RedactorService` with manual verification mode
+- [x] Step 3: Implement `SimilarityService` using label overlap
+- [x] Step 4: Run tests: `uv run pytest tests/test_triage_logic.py`
+- [x] Step 5: Commit
 
 ### Task 4: Orchestrator and Validation
 
@@ -85,10 +85,10 @@
 
 **Tasks:**
 
-- [ ] Step 1: Write failing test for orchestrator coordination
-- [ ] Step 2: Implement `Orchestrator` with input validation and PII check
-- [ ] Step 3: Run tests: `uv run pytest tests/test_orchestrator.py`
-- [ ] Step 4: Commit
+- [x] Step 1: Write failing test for orchestrator coordination
+- [x] Step 2: Implement `Orchestrator` with input validation and PII check
+- [x] Step 3: Run tests: `uv run pytest tests/test_orchestrator.py`
+- [x] Step 4: Commit
 
 ### Task 5: UI Layout (Gradio Blocks)
 
@@ -100,11 +100,11 @@
 
 **Tasks:**
 
-- [ ] Step 1: Define UI layout with Tabs, Rows, and Columns
-- [ ] Step 2: Implement Baseline Comparison accordion
-- [ ] Step 3: Implement Schema Configuration tab
-- [ ] Step 4: Implement Redacted Summary tab
-- [ ] Step 5: Commit UI structure
+- [x] Step 1: Define UI layout with Tabs, Rows, and Columns
+- [x] Step 2: Implement Baseline Comparison accordion
+- [x] Step 3: Implement Schema Configuration tab
+- [x] Step 4: Implement Redacted Summary tab
+- [x] Step 5: Commit UI structure
 
 ### Task 6: Event Wiring and Integration
 
@@ -115,9 +115,9 @@
 
 **Tasks:**
 
-- [ ] Step 1: Wire "Run Analysis" button to Orchestrator
-- [ ] Step 2: Implement Case Selector dropdown logic
-- [ ] Step 3: Implement live schema update logic
-- [ ] Step 4: Add loading indicators and error handling
-- [ ] Step 5: Verify with `prek run --all-files`
-- [ ] Step 6: Final commit
+- [x] Step 1: Wire "Run Analysis" button to Orchestrator
+- [x] Step 2: Implement Case Selector dropdown logic
+- [x] Step 3: Implement live schema update logic
+- [x] Step 4: Add loading indicators and error handling
+- [x] Step 5: Verify with `prek run --all-files`
+- [x] Step 6: Final commit
