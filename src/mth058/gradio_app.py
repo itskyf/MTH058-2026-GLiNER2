@@ -16,54 +16,33 @@ from mth058.ui.theme import load_custom_css
 # Configure logging
 logger = logging.getLogger(__name__)
 
-
-def create_demo() -> gr.Blocks:
-    """Initialize application components and return the Gradio demo object.
-
-    This function coordinates the initialization of GLiNER2 services and
-    constructs the user interface.
-
-    Returns:
-        gr.Blocks: The initialized Gradio Blocks instance.
-    """
+# Heavy resources that must not be reloaded on every file-save during development.
+# gr.NO_RELOAD is True during `gradio` hot-reload and True in normal `python` execution,
+# so this guard is safe to leave in production.
+if gr.NO_RELOAD:
     logger.info("Initializing Incident Triage Copilot services...")
 
-    # 1. Initialize Model (Module-level lru_cache handles reuse)
-    try:
-        model = get_gliner_model()
-    except (RuntimeError, ImportError, ValueError):
-        logger.exception("Critical failure loading GLiNER2 model")
-        raise
+    _model = get_gliner_model()
+    _fixtures = load_sample_incidents()
 
-    # 2. Load Fixtures
-    fixtures = load_sample_incidents()
+    _extractor = ExtractorService(model=_model)
+    _classifier = ClassifierService(model=_model)
+    _redactor = RedactorService()
+    _similarity = SimilarityService()
 
-    # 3. Initialize Domain Services
-    extractor = ExtractorService(model=model)
-    classifier = ClassifierService(model=model)
-    redactor = RedactorService()
-    similarity = SimilarityService()
-
-    # 4. Initialize Orchestrator
-    orchestrator = Orchestrator(
-        extractor=extractor,
-        classifier=classifier,
-        redactor=redactor,
-        similarity=similarity,
-        fixtures=fixtures,
+    _orchestrator = Orchestrator(
+        extractor=_extractor,
+        classifier=_classifier,
+        redactor=_redactor,
+        similarity=_similarity,
+        fixtures=_fixtures,
     )
 
-    # 5. Create UI
-    demo_obj = create_ui(orchestrator, fixtures)
+# Build the UI on every reload so layout/theme changes are picked up immediately.
+demo = create_ui(_orchestrator, _fixtures)
 
-    # Enable queue for concurrency handling in Gradio 6.0
-    demo_obj.queue(default_concurrency_limit=2)
-
-    return demo_obj
-
-
-# Global `demo` object for Gradio reloader compatibility
-demo: gr.Blocks = create_demo()
+# Enable queue for concurrency handling in Gradio 6.0
+demo.queue()
 
 
 if __name__ == "__main__":
