@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import gradio as gr
 import polars as pl
 
+from mth058.ui.formatters import format_triage_card_html
 from mth058.ui.theme import (
     APP_TITLE,
     DEFAULT_ENTITY_LABELS,
@@ -37,8 +39,14 @@ class TriageUI:
     evidence_timeline: gr.Markdown
     entity_display: gr.HighlightedText
     incident_card: gr.JSON
-    severity_indicator: gr.Label
-    team_indicator: gr.Label
+    incident_id_state: gr.State
+    triage_card_html: gr.HTML
+    edit_btn: gr.Button
+    override_group: gr.Group
+    override_severity: gr.Dropdown
+    override_team: gr.Dropdown
+    override_impact: gr.Textbox
+    override_safety: gr.Checkbox
     manual_edit_toggle: gr.Checkbox
     redacted_text: gr.Textbox
     routing_logic: gr.Markdown
@@ -75,6 +83,29 @@ def on_case_select(choice: str, fixtures: list[Incident]) -> str:
     return ""
 
 
+def sync_redacted_prompt(
+    severity: str,
+    team: str,
+    impact: str,
+    *,
+    is_safe: bool,
+    redacted_text: str,
+) -> str:
+    """Synchronize the final redacted prompt with manual override values."""
+    metadata = {
+        "severity": severity,
+        "team": team,
+        "impact": impact,
+        "is_safe": is_safe,
+    }
+    final_prompt_val = {
+        "role": "system",
+        "content": f"Analyze the following redacted incident:\n\n{redacted_text}",
+        "metadata": metadata,
+    }
+    return json.dumps(final_prompt_val, indent=2)
+
+
 def analyze_incident(
     text: str,
     schema_df: pl.DataFrame,
@@ -90,8 +121,16 @@ def analyze_incident(
     Returns a dictionary mapping components to their new values.
     """
     if not text:
-        gr.Warning("Please enter incident text before running analysis.")
-        return {}
+        gr.Info("Please enter incident text before running analysis.")
+        return {
+            ui.triage_card_html: format_triage_card_html(
+                "Unknown",
+                "None",
+                "Please enter incident text above.",
+                is_safe=True,
+                incident_id="INC-PENDING",
+            ),
+        }
 
     try:
         # Prepare configuration from Polars DataFrame
@@ -169,11 +208,23 @@ def analyze_incident(
             if e.label in ["Person", "Email"]
         ]
 
+        incident_id = f"INC-2026-{uuid.uuid4().hex[:4].upper()}"
+
         return {
             ui.entity_display: {"text": text, "entities": entities},
             ui.incident_card: incident_card_data,
-            ui.severity_indicator: incident.severity,
-            ui.team_indicator: incident.team,
+            ui.incident_id_state: incident_id,
+            ui.triage_card_html: format_triage_card_html(
+                incident.severity,
+                incident.team,
+                incident.impact,
+                incident.is_safe,
+                incident_id,
+            ),
+            ui.override_severity: incident.severity,
+            ui.override_team: incident.team,
+            ui.override_impact: incident.impact,
+            ui.override_safety: incident.is_safe,
             ui.redacted_text: incident.redacted_text,
             ui.similar_cases: similar_df,
             ui.evidence_timeline: timeline,
@@ -215,37 +266,64 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                 raw_input = gr.Textbox(
                     label="Raw Text (Logs / Chat / Email)",
                     placeholder="Paste incident raw text here...",
-                    lines=20,
+                    lines=12,
                     elem_id="raw-input-box",
                 )
+
                 evidence_timeline = gr.Markdown(
                     "### Evidence Timeline\n*Waiting for analysis...*",
                     label="Evidence Timeline",
                 )
 
-            # Center Column: Extraction
+            # Center Column: Triage Decision
             with gr.Column(scale=1):
-                gr.Markdown("### 2. Extraction")
-                with gr.Group():
-                    entity_display = gr.HighlightedText(
-                        label="Extracted Entities",
-                        color_map={
-                            "Person": "red",
-                            "Email": "blue",
-                            "IP Address": "green",
-                        },
-                        combine_adjacent=True,
-                        show_legend=True,
-                    )
+                incident_id_state = gr.State(value="INC-PENDING")
+                gr.Markdown("### 2. Intelligence & Triage")
 
-                incident_card = gr.JSON(
-                    label="Incident Card",
-                    value={"status": "Awaiting Analysis"},
+                entity_display = gr.HighlightedText(
+                    label="GLiNER2 Extracted Intelligence",
+                    color_map={
+                        "Person": "red",
+                        "Email": "blue",
+                        "IP Address": "green",
+                    },
+                    combine_adjacent=True,
+                    show_legend=True,
                 )
 
-                with gr.Row():
-                    severity_indicator = gr.Label(label="Severity", value="Unknown")
-                    team_indicator = gr.Label(label="Target Team", value="None")
+                triage_card_html = gr.HTML(
+                    value=format_triage_card_html(
+                        "Unknown",
+                        "None",
+                        "Awaiting analysis...",
+                        is_safe=True,
+                        incident_id="INC-PENDING",
+                    ),
+                    label="Triage Card",
+                )
+
+                edit_btn = gr.Button("Edit Predictions", size="sm")
+
+                with gr.Group(visible=False) as override_group:
+                    override_severity = gr.Dropdown(
+                        choices=SEVERITY_LABELS,
+                        label="Manual Severity",
+                    )
+                    override_team = gr.Dropdown(
+                        choices=TEAM_LABELS,
+                        label="Manual Team",
+                    )
+                    override_impact = gr.Textbox(label="Manual Impact Summary", lines=2)
+                    override_safety = gr.Checkbox(
+                        label="PII Safety Status (Checked = Safe)",
+                        value=True,
+                    )
+
+                with gr.Accordion("Show Raw Analytical Data", open=False):
+                    incident_card = gr.JSON(
+                        label="Incident Card",
+                        value={"status": "Awaiting Analysis"},
+                    )
 
             # Right Column: Triage/Output
             with gr.Column(scale=1):
@@ -291,8 +369,14 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
         evidence_timeline=evidence_timeline,
         entity_display=entity_display,
         incident_card=incident_card,
-        severity_indicator=severity_indicator,
-        team_indicator=team_indicator,
+        incident_id_state=incident_id_state,
+        triage_card_html=triage_card_html,
+        edit_btn=edit_btn,
+        override_group=override_group,
+        override_severity=override_severity,
+        override_team=override_team,
+        override_impact=override_impact,
+        override_safety=override_safety,
         manual_edit_toggle=manual_edit_toggle,
         redacted_text=redacted_text,
         routing_logic=routing_logic,
@@ -373,6 +457,41 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
             outputs=[triage_ui.raw_input],
         )
 
+        # Toggle Manual Override Group
+        triage_ui.edit_btn.click(
+            fn=lambda visible: gr.update(visible=not visible),
+            inputs=[triage_ui.override_group],
+            outputs=[triage_ui.override_group],
+        )
+
+        # Live Update Triage Summary on Manual Override
+        override_inputs = [
+            triage_ui.override_severity,
+            triage_ui.override_team,
+            triage_ui.override_impact,
+            triage_ui.override_safety,
+            triage_ui.incident_id_state,
+        ]
+
+        for inp in override_inputs[:-1]:  # exclude incident_id_state from triggers
+            inp.change(
+                fn=format_triage_card_html,
+                inputs=override_inputs,
+                outputs=[triage_ui.triage_card_html],
+            )
+            # Update Redacted Tab Prompt on any override change
+            inp.change(
+                fn=sync_redacted_prompt,
+                inputs=[
+                    triage_ui.override_severity,
+                    triage_ui.override_team,
+                    triage_ui.override_impact,
+                    triage_ui.override_safety,
+                    triage_ui.redacted_text,
+                ],
+                outputs=[redacted_ui.final_prompt],
+            )
+
         triage_ui.run_btn.click(
             fn=lambda t, s: analyze_incident(
                 t,
@@ -385,8 +504,12 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
             outputs=[
                 triage_ui.entity_display,
                 triage_ui.incident_card,
-                triage_ui.severity_indicator,
-                triage_ui.team_indicator,
+                triage_ui.incident_id_state,
+                triage_ui.triage_card_html,
+                triage_ui.override_severity,
+                triage_ui.override_team,
+                triage_ui.override_impact,
+                triage_ui.override_safety,
                 triage_ui.redacted_text,
                 triage_ui.similar_cases,
                 triage_ui.evidence_timeline,

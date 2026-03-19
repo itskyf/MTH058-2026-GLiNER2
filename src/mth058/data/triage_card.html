@@ -1,0 +1,15 @@
+<div class="triage-card {{ severity_class }}">
+    <div class="triage-card-header">
+        <div>
+            <span class="triage-badge badge-severity">{{ severity }}</span>
+            <span class="incident-id">{{ incident_id }}</span>
+        </div>
+        <span class="triage-badge {{ safety_badge_class }}">{{ safety_label }}</span>
+    </div>
+    <div style="margin-bottom: 10px;">
+        <span class="triage-badge badge-team">{{ team }}</span>
+    </div>
+    <div class="triage-card-impact">
+        <strong>Impact Summary:</strong> {{ impact }}
+    </div>
+</div>

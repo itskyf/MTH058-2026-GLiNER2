@@ -1,66 +1,67 @@
-# Design Spec: Action-Oriented Triage Card (Interactive)
+# Design Spec: Action-Oriented Triage Summary (Logic-First)
 
 ## Overview
 
-Improve the incident triage UI in the MTH058 Ops Console by replacing redundant, overlapping components (JSON card, separate labels) with a single, professional "Triage Card" that supports manual overrides.
+This spec details the implementation of a professional "Triage Summary" for the MTH058 Ops Console. It replaces redundant UI components with a single, clear Markdown summary and functional override controls for GLiNER2 predictions.
 
 ## Objectives
 
-- Remove redundant information display in the "Extraction" column.
-- Improve visual hierarchy and aesthetics using styled badges and color-coded borders.
-- Allow analysts to manually override GLiNER2 predictions (Severity, Team) directly in the UI.
+- **Visual Hierarchy**: Use simple Markdown with bolding and emojis (🔴, ✅) to display incident status.
+- **Manual Intervention**: Allow analysts to override GLiNER2-extracted `Severity`, `Team`, `Impact`, and `Safety Status` directly in the UI.
+- **Safety Transparency**: Clearly display "PII SAFETY STATUS" (Safe vs. Unsafe Leak) as a core part of the triage decision.
+- **Clutter Reduction**: Move raw analytical data into a collapsible "Developer View" to reduce cognitive load.
 
-## Component Changes
+## Component Design
 
-### 1. Unified Triage Card
+### 1. Unified Triage Summary (Markdown)
 
-- **Implementation**: Use a combination of `gr.HTML` for the card display and `gr.Group` for structural containment.
-- **Visuals**:
-  - `border-left`: 10px wide, color-coded by severity (Critical: Red, High: Orange, Medium: Yellow, Low: Blue).
-  - **Header**: "INCIDENT SEVERITY" badge (large) + Auto-generated incident ID.
-  - **Body**: "ASSIGNED TEAM" badge + "EXTRACTED IMPACT" text area.
-  - **Footer**: "PII SAFETY STATUS" badge (Green for Safe, Red for Unsafe Leak).
-- **Interactivity**: Include "Edit" links/icons that toggle the visibility of manual override dropdowns.
+A single `gr.Markdown` component that dynamically renders the incident's state using simple text.
 
-### 2. Manual Override Controls
+- **Content**:
+  - `### INCIDENT SEVERITY: **{severity}** {severity_emoji}`
+  - `### ASSIGNED TEAM: **{team}**`
+  - `**Impact Summary:** {impact}`
+  - `**PII SAFETY STATUS:** {safety_status_emoji} **{safety_label}**`
+- **Initial State**: `### Awaiting analysis...`
 
-- **Severity Dropdown**: A `gr.Dropdown` initially hidden or placed below the card to manually correct severity.
-- **Team Dropdown**: A `gr.Dropdown` initially hidden or placed below the card to manually correct team assignments.
-- **Data Flow**: Any selection in these dropdowns will trigger a `change` event to update the `Triage Card` HTML preview and the internal `Incident` state.
+### 2. Manual Override & Controls
 
-### 3. Developer/Raw View
+A set of controls hidden by default to maintain a clean UI.
 
-- Move the current `gr.JSON` (Incident Card) into a `gr.Accordion` labeled "Show Raw Analytical Data" at the bottom of the column to reduce cognitive load.
+- **Edit Toggle**: A `gr.Button` ("Edit Predictions") that toggles the visibility of the `gr.Group` below.
+- **Override Group**: A `gr.Group` containing:
+  - **Severity Dropdown**: `gr.Dropdown` for manual severity correction.
+  - **Team Dropdown**: `gr.Dropdown` for manual team assignment correction.
+  - **Impact Textbox**: `gr.Textbox` for manual impact summary correction.
+  - **Safety Status Checkbox**: `gr.Checkbox` for manual safety status override (Safe/Unsafe).
+- **Data Flow**: Any change in the dropdowns or controls triggers a `change` event that re-renders the `Triage Summary` Markdown and updates the internal `Incident` state used by the "Redacted Summary" tab. These changes **do not** re-trigger the GLiNER2 analysis pipeline.
 
-## Data Flow & State Management
+### 3. Developer View (Raw JSON)
 
-1. **Analysis Run**:
-   - `analyze_incident` callback computes severity/team using GLiNER2.
-   - It updates the `Triage Card` HTML and the `Severity/Team` dropdown values.
-2. **Manual Override**:
-   - Analyst clicks "Edit" on the card.
-   - The corresponding dropdown is revealed.
-   - Any change to the dropdown triggers an update to the `Triage Card` HTML to reflect the new manual decision.
-3. **Integration**:
-   - The final "Redacted Summary" tab uses the *latest* selected values from the UI state (incorporating manual overrides) for its prompt generation.
+- The existing `gr.JSON` ("Incident Card") is moved into a `gr.Accordion` labeled "Show Raw Analytical Data" at the bottom of the column.
 
-## Technical Details
+## Technical Implementation
 
 ### File: `src/mth058/ui/interface.py`
 
-- Modify `create_triage_tab` to replace `incident_card`, `severity_indicator`, and `team_indicator` with the new design.
-- Define a helper function `format_triage_card_html(severity, team, impact, is_safe)` to generate the card's HTML fragment.
+- Replace `incident_card`, `severity_indicator`, and `team_indicator` in `create_triage_tab`.
+- Implement `format_triage_summary_markdown(severity, team, impact, is_safe, incident_id)` to generate the Markdown string.
+- Update `analyze_incident` to return values for the new override controls and the Markdown summary simultaneously.
+- Add event listeners for the `Edit` button and all override controls.
 
-### File: `src/mth058/data/theme.css`
+## Data Flow & State Management
 
-- Add CSS classes for:
-  - `.triage-card`: Container with padding, background, and rounded corners.
-  - `.triage-card-badge`: Base style for badges.
-  - `.severity-critical`, `.severity-high`, etc.: Specific color tokens.
-  - `.team-badge`: Styled badge for team assignment.
+1. **Initial Analysis**:
+   - `analyze_incident` callback computes values using GLiNER2 and generates a persistent `incident_id`.
+   - Updates the `Triage Summary` Markdown and sets initial values for the override controls.
+2. **Manual Update**:
+   - Analyst changes a value in an override control.
+   - The control's `change` event triggers an update to the `Triage Summary` Markdown to reflect the manual decision.
+3. **Integration**:
+   - The "Redacted Summary" tab pulls its values directly from the override controls to ensure the final output reflects any manual corrections.
 
 ## Testing Strategy
 
-1. **Visual Verification**: Use Gradio's live reload to verify the card's layout and border color changes based on extraction.
-2. **Interaction Verification**: Confirm that changing the "Severity" dropdown updates the card badge and color-coding instantly.
+1. **Visual Verification**: Confirm that the Markdown summary correctly updates its text and emojis based on extraction and overrides.
+2. **Interaction Verification**: Confirm that changing the "Severity" dropdown updates the Markdown summary instantly.
 3. **End-to-End**: Ensure that a manually overridden severity is correctly reflected in the "Redacted Summary" prompt on the final tab.
