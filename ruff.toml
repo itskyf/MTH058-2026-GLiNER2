@@ -6,5 +6,8 @@ ignore = [
   "D104",  # Missing docstring in public package
 ]
 
+[lint.per-file-ignores]
+"tests/*" = ["S101"]
+
 [lint.pydocstyle]
 convention = "google"

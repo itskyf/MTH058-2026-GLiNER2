@@ -1,0 +1,47 @@
+{
+	"raw_text": "On March 19th, 2026, John Doe reported a data leak in the 'Finance' database. The leak was discovered at 2 PM PST and seems to affect about 100 users in San Francisco.",
+	"sections": {
+		"summary": "Data leak in Finance database reported by John Doe.",
+		"impact": "Affected 100 users in San Francisco."
+	},
+	"entities": [
+		{
+			"label": "DATE",
+			"text": "March 19th, 2026",
+			"start": 3,
+			"end": 19,
+			"score": 0.98
+		},
+		{
+			"label": "PERSON",
+			"text": "John Doe",
+			"start": 21,
+			"end": 29,
+			"score": 0.99
+		},
+		{
+			"label": "ORG",
+			"text": "Finance",
+			"start": 51,
+			"end": 58,
+			"score": 0.95
+		},
+		{
+			"label": "TIME",
+			"text": "2 PM PST",
+			"start": 91,
+			"end": 99,
+			"score": 0.97
+		},
+		{
+			"label": "GPE",
+			"text": "San Francisco",
+			"start": 141,
+			"end": 154,
+			"score": 0.96
+		}
+	],
+	"severity": "High",
+	"team": "Security Operations",
+	"impact": "Potential exposure of 100 user records."
+}
