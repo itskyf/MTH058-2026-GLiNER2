@@ -4,7 +4,7 @@ import logging
 
 import gradio as gr
 
-from mth058.data.fixtures import load_sample_incident
+from mth058.data.fixtures import load_sample_incidents
 from mth058.services.classifier import ClassifierService
 from mth058.services.extractor import ExtractorService, get_gliner_model
 from mth058.services.orchestrator import Orchestrator
@@ -36,8 +36,7 @@ def create_demo() -> gr.Blocks:
         raise
 
     # 2. Load Fixtures
-    sample_incident = load_sample_incident()
-    fixtures = [sample_incident]
+    fixtures = load_sample_incidents()
 
     # 3. Initialize Domain Services
     extractor = ExtractorService(model=model)

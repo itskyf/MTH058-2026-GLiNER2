@@ -1,47 +1,74 @@
-{
-	"raw_text": "On March 19th, 2026, John Doe reported a data leak in the 'Finance' database. The leak was discovered at 2 PM PST and seems to affect about 100 users in San Francisco.",
-	"sections": {
-		"summary": "Data leak in Finance database reported by John Doe.",
-		"impact": "Affected 100 users in San Francisco."
-	},
-	"entities": [
-		{
-			"label": "DATE",
-			"text": "March 19th, 2026",
-			"start": 3,
-			"end": 19,
-			"score": 0.98
+[
+	{
+		"id": "INC-1042",
+		"title": "Duplicate charges for enterprise tenant",
+		"raw_text": "[14:02] @sre-oncall we are seeing multiple Stripe alerts for tenant_id org_8f92a. The customer (frank@bigcorp.com) just emailed saying they got charged 3x for their monthly renewal ($4,500 total). [14:05] Looks like the billing-db timed out during the transaction. Can someone check the idempotency keys? Logs show request_id=req_12345.",
+		"sections": {
+			"summary": "Tenant org_8f92a was charged multiple times for monthly renewal.",
+			"impact": "Customer overcharged $4,500 total, blowing up support."
 		},
-		{
-			"label": "PERSON",
-			"text": "John Doe",
-			"start": 21,
-			"end": 29,
-			"score": 0.99
-		},
-		{
-			"label": "ORG",
-			"text": "Finance",
-			"start": 51,
-			"end": 58,
-			"score": 0.95
-		},
-		{
-			"label": "TIME",
-			"text": "2 PM PST",
-			"start": 91,
-			"end": 99,
-			"score": 0.97
-		},
-		{
-			"label": "GPE",
-			"text": "San Francisco",
-			"start": 141,
-			"end": 154,
-			"score": 0.96
+		"entities": [],
+		"severity": "High",
+		"team": "Billing",
+		"impact": "Customer overcharged multiple times",
+		"expected_severity": "High",
+		"expected_team": "Billing",
+		"expected_customer_impact": "High (Enterprise tenant overcharged)",
+		"expected_routing_suggestion": "Billing & Payments Team",
+		"expected_redaction_targets": [
+			"frank@bigcorp.com",
+			"org_8f92a",
+			"req_12345"
+		],
+		"expected_wow_fields": {
+			"tenant_id": "org_8f92a",
+			"financial_impact": "$4,500",
+			"payment_provider": "Stripe"
 		}
-	],
-	"severity": "High",
-	"team": "Security Operations",
-	"impact": "Potential exposure of 100 user records."
-}
+	},
+	{
+		"id": "INC-1055",
+		"title": "Mobile app crash on login",
+		"raw_text": "Since the v2.4 roll out at 9 AM, iOS users are reporting crash on launch. User sarah_99 (sarah.jenkins@email.com) sent a screen recording. Sentry is showing a spike in EXC_BAD_ACCESS in the AuthViewController. It seems the new JWT token payload is missing the 'roles' array for legacy users. Impact is about 400 users so far, mostly on iOS 16.",
+		"sections": {
+			"summary": "iOS app crashing on launch for legacy users due to JWT token.",
+			"impact": "400 users unable to log in on iOS 16."
+		},
+		"entities": [],
+		"severity": "Critical",
+		"team": "Mobile Auth",
+		"impact": "400 iOS users blocked from login",
+		"expected_severity": "Critical",
+		"expected_team": "Mobile Auth",
+		"expected_customer_impact": "High (400 users blocked from login)",
+		"expected_routing_suggestion": "Mobile Auth / iOS Team",
+		"expected_redaction_targets": ["sarah_99", "sarah.jenkins@email.com"],
+		"expected_wow_fields": {
+			"app_version": "v2.4",
+			"os": "iOS 16",
+			"exception_type": "EXC_BAD_ACCESS"
+		}
+	},
+	{
+		"id": "INC-1061",
+		"title": "Kafka backlog causing webhook delays",
+		"raw_text": "PagerDuty alert: Kafka lag on topic `webhook-deliveries` exceeded 50,000 messages. Starting around 03:00 UTC. One of our downstream partners, WebhookCorp (IP: 198.51.100.14), is rate limiting us with 429s, causing the workers to stall. We might need to pause consumption for their partition so other tenants aren't affected. John Smith is currently looking at the consumer group metrics.",
+		"sections": {
+			"summary": "Kafka topic webhook-deliveries is lagging by 50k messages.",
+			"impact": "Webhook delivery delays for all tenants due to one partitioned partner."
+		},
+		"entities": [],
+		"severity": "Medium",
+		"team": "Platform Infrastructure",
+		"impact": "Webhook delays for tenants",
+		"expected_severity": "Medium",
+		"expected_team": "Platform Infrastructure",
+		"expected_customer_impact": "Medium (Delayed webhooks, no data loss)",
+		"expected_routing_suggestion": "Data Platform / Infrastructure",
+		"expected_redaction_targets": ["198.51.100.14", "John Smith"],
+		"expected_wow_fields": {
+			"topic_name": "webhook-deliveries",
+			"lag_size": "50,000"
+		}
+	}
+]

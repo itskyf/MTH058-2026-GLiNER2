@@ -7,7 +7,7 @@ package resources with Pydantic validation.
 import logging
 from importlib.resources import files
 
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 import mth058.data
 from mth058.models import Incident
@@ -15,22 +15,22 @@ from mth058.models import Incident
 logger = logging.getLogger(__name__)
 
 
-def load_sample_incident() -> Incident:
-    """Loads and validates the sample incident from JSON fixture.
+def load_sample_incidents() -> list[Incident]:
+    """Loads and validates the sample incidents from JSON fixture.
 
     Returns:
-        Incident: The validated incident object.
+        list[Incident]: The list of validated incident objects.
 
     Raises:
         ValueError: If data fails validation or loading.
     """
     fixture_path = files(mth058.data) / "sample_incident.json"
     try:
-        # Use model_validate_json for high-performance parsing and validation
-        return Incident.model_validate_json(fixture_path.read_text(encoding="utf-8"))
+        adapter = TypeAdapter(list[Incident])
+        return adapter.validate_json(fixture_path.read_text(encoding="utf-8"))
     except (FileNotFoundError, ValidationError) as e:
-        logger.exception("Failed to load and validate sample incident")
-        msg = f"Failed to load sample incident: {e}"
+        logger.exception("Failed to load and validate sample incidents")
+        msg = f"Failed to load sample incidents: {e}"
         raise ValueError(msg) from e
 
 
