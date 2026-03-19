@@ -87,7 +87,7 @@ class ExtractorService:
             # The model returns a list of dictionaries
             # Each dict has: 'start', 'end', 'label', 'text', 'score'
             # threshold is set to 0.5 to balance precision/recall
-            predictions = self.model.predict_entities(chunk, labels, threshold=0.5)
+            predictions = self.model.extract_entities(chunk, labels, threshold=0.5)
 
             for pred in predictions:
                 # Adjust start/end positions based on current_offset

@@ -21,3 +21,4 @@ Check and load appropriate agent skills before implementation.
 - Keep logging minimal and clear. Prioritize logic over styling (e.g., no padding in logging).
 - Use modern Python typing (`dict[str, int], X | None`, not `from typing import List`) and avoid Any.
 - Use structured types (e.g., NamedTuple, dataclasses, TypedDict, Pydantic) instead of raw dictionaries for complex data to prevent hardcoded keys and enable IDE refactoring.
+- Do NOT use `noqa` to suppress linting errors. If an issue is unfixable or should be ignored, ask the user for guidance.

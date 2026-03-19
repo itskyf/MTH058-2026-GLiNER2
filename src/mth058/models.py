@@ -4,6 +4,8 @@ This module defines the data structures for entities, incidents, and UI-
 friendly incident cards.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -36,6 +38,8 @@ class Incident(BaseModel):
         severity (str): Assessed severity level (e.g., Low, Medium, High, Critical).
         team (str): The team assigned to handle the incident.
         impact (str): The impact summary.
+        redacted_text (str): The text with PII removed/masked.
+        is_safe (bool): Whether the incident is safe for LLM consumption.
     """
 
     raw_text: str
@@ -44,6 +48,25 @@ class Incident(BaseModel):
     severity: str
     team: str
     impact: str
+    redacted_text: str = ""
+    is_safe: bool = False
+
+
+class IncidentContext(BaseModel):
+    """Model representing the context of an incident analysis.
+
+    This model stores the input, configuration, and intermediate/final
+    results of the analysis process.
+
+    Attributes:
+        text (str): The raw input text.
+        config (dict): Configuration for the analysis.
+        incident (Incident, optional): The resulting incident object.
+    """
+
+    text: str
+    config: dict[str, Any] = Field(default_factory=dict)
+    incident: Incident | None = None
 
 
 class IncidentCard(BaseModel):

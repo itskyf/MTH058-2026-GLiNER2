@@ -40,7 +40,7 @@ class ClassifierService:
 
         # GLiNER can be used for classification by treating labels as entities
         # to be extracted from the entire text.
-        predictions = self.model.predict_entities(text, labels, threshold=threshold)
+        predictions = self.model.extract_entities(text, labels, threshold=threshold)
 
         if not predictions:
             return "Unknown"

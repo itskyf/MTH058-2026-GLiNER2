@@ -12,8 +12,8 @@ from mth058.services.extractor import ExtractorService
 def mock_model() -> MagicMock:
     """Provides a mocked GLiNER model for testing."""
     model = MagicMock()
-    # Mocking the predict_entities method
-    model.predict_entities.return_value = [
+    # Mocking the extract_entities method
+    model.extract_entities.return_value = [
         {"start": 0, "end": 8, "label": "PERSON", "text": "John Doe", "score": 0.99},
     ]
     return model
@@ -30,7 +30,7 @@ def test_extractor_service_extract(mock_model: MagicMock) -> None:
     assert len(entities) == 1
     assert entities[0].label == "PERSON"
     assert entities[0].text == "John Doe"
-    mock_model.predict_entities.assert_called_once()
+    mock_model.extract_entities.assert_called_once()
 
 
 def test_extractor_chunking_via_public_api(mock_model: MagicMock) -> None:
@@ -41,13 +41,13 @@ def test_extractor_chunking_via_public_api(mock_model: MagicMock) -> None:
 
     service.extract(text, labels)
 
-    assert mock_model.predict_entities.call_count > 1
+    assert mock_model.extract_entities.call_count > 1
 
 
 def test_classifier_service_classify(mock_model: MagicMock) -> None:
     """Test text classification using GLiNER."""
     # Mock specific return for classification
-    mock_model.predict_entities.return_value = [
+    mock_model.extract_entities.return_value = [
         {"label": "Critical", "score": 0.95},
     ]
 
@@ -58,4 +58,4 @@ def test_classifier_service_classify(mock_model: MagicMock) -> None:
     result = service.classify(text, labels)
 
     assert result == "Critical"
-    mock_model.predict_entities.assert_called_once()
+    mock_model.extract_entities.assert_called_once()

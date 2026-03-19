@@ -1,0 +1,45 @@
+.container {
+	max-width: 1400px;
+	margin: auto;
+}
+
+.header-row {
+	margin-bottom: 20px;
+}
+
+.triage-tab-container {
+	padding: 10px;
+}
+
+.column-header {
+	font-weight: bold;
+	font-size: 1.1em;
+	margin-bottom: 10px;
+}
+
+/* Custom styling for status indicators */
+.severity-high {
+	color: #ff4d4d;
+	font-weight: bold;
+}
+.severity-medium {
+	color: #ffa64d;
+	font-weight: bold;
+}
+.severity-low {
+	color: #4da6ff;
+	font-weight: bold;
+}
+
+.team-badge {
+	padding: 2px 8px;
+	border-radius: 4px;
+	background-color: #e0e0e0;
+	font-size: 0.9em;
+}
+
+/* Scrollable containers for long logs */
+.scrollable-text {
+	max-height: 500px;
+	overflow-y: auto;
+}
