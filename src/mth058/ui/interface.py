@@ -123,6 +123,9 @@ def analyze_incident(
     if not text:
         gr.Info("Please enter incident text before running analysis.")
         return {
+            ui.entity_display: gr.update(),
+            ui.incident_card: gr.update(),
+            ui.incident_id_state: gr.update(),
             ui.triage_card_html: format_triage_card_html(
                 "Unknown",
                 "None",
@@ -130,6 +133,18 @@ def analyze_incident(
                 is_safe=True,
                 incident_id="INC-PENDING",
             ),
+            ui.override_severity: gr.update(),
+            ui.override_team: gr.update(),
+            ui.override_impact: gr.update(),
+            ui.override_safety: gr.update(),
+            ui.redacted_text: gr.update(),
+            ui.similar_cases: gr.update(),
+            ui.evidence_timeline: gr.update(),
+            ui.routing_logic: gr.update(),
+            redacted_ui.final_prompt: gr.update(),
+            redacted_ui.validation_status: gr.update(),
+            ui.gliner_comparison: gr.update(),
+            ui.trad_comparison: gr.update(),
         }
 
     try:
@@ -218,8 +233,8 @@ def analyze_incident(
                 incident.severity,
                 incident.team,
                 incident.impact,
-                incident.is_safe,
-                incident_id,
+                is_safe=incident.is_safe,
+                incident_id=incident_id,
             ),
             ui.override_severity: incident.severity,
             ui.override_team: incident.team,
@@ -238,11 +253,46 @@ def analyze_incident(
     except (ValueError, KeyError, TypeError) as e:
         logger.exception("Analysis failed due to data/configuration error")
         gr.Error(f"Analysis failed: {e!s}")
-        return {}
+        # Empty updates for all components to satisfy Gradio's expected output count
+        return {
+            ui.entity_display: gr.update(),
+            ui.incident_card: gr.update(),
+            ui.incident_id_state: gr.update(),
+            ui.triage_card_html: gr.update(),
+            ui.override_severity: gr.update(),
+            ui.override_team: gr.update(),
+            ui.override_impact: gr.update(),
+            ui.override_safety: gr.update(),
+            ui.redacted_text: gr.update(),
+            ui.similar_cases: gr.update(),
+            ui.evidence_timeline: gr.update(),
+            ui.routing_logic: gr.update(),
+            redacted_ui.final_prompt: gr.update(),
+            redacted_ui.validation_status: gr.update(),
+            ui.gliner_comparison: gr.update(),
+            ui.trad_comparison: gr.update(),
+        }
     except RuntimeError as e:
         logger.exception("Model execution failed during analysis")
         gr.Error(f"Model error: {e!s}")
-        return {}
+        return {
+            ui.entity_display: gr.update(),
+            ui.incident_card: gr.update(),
+            ui.incident_id_state: gr.update(),
+            ui.triage_card_html: gr.update(),
+            ui.override_severity: gr.update(),
+            ui.override_team: gr.update(),
+            ui.override_impact: gr.update(),
+            ui.override_safety: gr.update(),
+            ui.redacted_text: gr.update(),
+            ui.similar_cases: gr.update(),
+            ui.evidence_timeline: gr.update(),
+            ui.routing_logic: gr.update(),
+            redacted_ui.final_prompt: gr.update(),
+            redacted_ui.validation_status: gr.update(),
+            ui.gliner_comparison: gr.update(),
+            ui.trad_comparison: gr.update(),
+        }
 
 
 def create_triage_tab(fixture_names: list[str]) -> TriageUI:
@@ -357,10 +407,16 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
         with gr.Accordion("Baseline Comparison", open=False), gr.Row():
             with gr.Column():
                 gr.Markdown("#### GLiNER2 (Zero-shot)")
-                gliner_comparison = gr.HighlightedText(label="GLiNER2 Output")
+                gliner_comparison = gr.HighlightedText(
+                    label="GLiNER2 Output",
+                    show_legend=True,
+                )
             with gr.Column():
                 gr.Markdown("#### Traditional NER (Static)")
-                trad_comparison = gr.HighlightedText(label="spaCy / Static Output")
+                trad_comparison = gr.HighlightedText(
+                    label="spaCy / Static Output",
+                    show_legend=True,
+                )
 
     return TriageUI(
         case_selector=case_selector,
@@ -475,13 +531,25 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
 
         for inp in override_inputs[:-1]:  # exclude incident_id_state from triggers
             inp.change(
-                fn=format_triage_card_html,
+                fn=lambda sev, team, imp, safe, inc_id: format_triage_card_html(
+                    sev,
+                    team,
+                    imp,
+                    is_safe=safe,
+                    incident_id=inc_id,
+                ),
                 inputs=override_inputs,
                 outputs=[triage_ui.triage_card_html],
             )
             # Update Redacted Tab Prompt on any override change
             inp.change(
-                fn=sync_redacted_prompt,
+                fn=lambda sev, team, imp, safe, text: sync_redacted_prompt(
+                    sev,
+                    team,
+                    imp,
+                    is_safe=safe,
+                    redacted_text=text,
+                ),
                 inputs=[
                     triage_ui.override_severity,
                     triage_ui.override_team,

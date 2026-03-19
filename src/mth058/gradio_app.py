@@ -50,4 +50,4 @@ if __name__ == "__main__":
     custom_css = load_custom_css()
     logger.info("Starting Gradio server...")
     # App-level parameters (theme, css, js) are passed to launch() in Gradio 6.0
-    demo.launch(share=False, debug=True, css=custom_css)
+    demo.launch(share=False, css=custom_css)
