@@ -1,0 +1,14 @@
+[env]
+FNOX_AGE_KEY_FILE = "$HOME/.config/fnox/age.txt"
+_.fnox-env = { tools = true }
+
+[plugins]
+fnox-env = "https://github.com/jdx/mise-env-fnox"
+
+[tools]
+fnox = "1.15.1"
+prek = { version = "latest", postinstall = "prek install" }
+uv = "latest"
+
+[settings]
+env_shell_expand = true
