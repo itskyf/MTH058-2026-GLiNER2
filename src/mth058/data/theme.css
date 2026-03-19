@@ -43,3 +43,82 @@
 	max-height: 500px;
 	overflow-y: auto;
 }
+
+/* Triage Card Container */
+.triage-card {
+	padding: 15px;
+	background-color: var(--background-fill-secondary);
+	border-radius: 8px;
+	border: 1px solid var(--border-color-primary);
+	margin-bottom: 15px;
+}
+
+/* Severity-coded Borders */
+.triage-card-critical {
+	border-left: 10px solid #ff4d4d !important;
+}
+.triage-card-high {
+	border-left: 10px solid #ffa64d !important;
+}
+.triage-card-medium {
+	border-left: 10px solid #ffeb3b !important;
+}
+.triage-card-low {
+	border-left: 10px solid #4da6ff !important;
+}
+.triage-card-unknown {
+	border-left: 10px solid #e0e0e0 !important;
+}
+
+/* Badges */
+.triage-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 4px;
+	font-size: 0.85em;
+	font-weight: bold;
+	text-transform: uppercase;
+	margin-right: 8px;
+}
+
+.badge-severity {
+	background-color: var(--secondary-500);
+	color: white;
+}
+.badge-team {
+	background-color: var(--primary-500);
+	color: white;
+}
+
+/* Safety Status Badges */
+.badge-safety-safe {
+	background-color: #4caf50;
+	color: white;
+}
+.badge-safety-unsafe {
+	background-color: #f44336;
+	color: white;
+}
+
+/* Header and ID */
+.triage-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.incident-id {
+	font-family: monospace;
+	font-weight: bold;
+	color: var(--body-text-color-subdued);
+}
+
+/* Impact Section */
+.triage-card-impact {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px dashed var(--border-color-primary);
+	font-style: italic;
+	color: var(--body-text-color);
+}
