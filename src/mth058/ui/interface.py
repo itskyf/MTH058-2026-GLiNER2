@@ -29,6 +29,31 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+SCHEMA_DESCRIPTIONS = {
+    "Person": "Full name or alias of an individual.",
+    "Email": "Email address of a user or service.",
+    "Phone": "Phone number or contact number.",
+    "Organization": "Company, team, or group name.",
+    "Location": "Geographic location or office address.",
+    "IP Address": "IP address or network identifier.",
+    "Date": "Date or time period.",
+    "Service Name": "Name of the software service or microservice.",
+    "Release Version": "Software version or build number (e.g., v1.2.3).",
+    "Feature Flag": "Toggle or feature flag name.",
+    "Tenant Id": "Unique identifier for a customer tenant.",
+    "Exception Type": "Error name or stack trace exception.",
+    "Account Id": "Internal account or user ID.",
+    "Customer Info": "Sensitive customer-specific information.",
+    "Severity Indicator": (
+        "A key phrase indicating the urgency or scale "
+        "(e.g., 'multiple alerts', 'critical outage')."
+    ),
+    "Assignment Reason": (
+        "Contextual reason for team routing (e.g., 'billing-db', 'iOS users')."
+    ),
+}
+
+
 @dataclass
 class TriageUI:
     """Container for Triage tab components."""
@@ -38,6 +63,8 @@ class TriageUI:
     raw_input: gr.Textbox
     evidence_timeline: gr.Markdown
     entity_display: gr.HighlightedText
+    severity_distribution: gr.Label
+    team_distribution: gr.Label
     incident_card: gr.JSON
     incident_id_state: gr.State
     triage_card_html: gr.HTML
@@ -47,12 +74,9 @@ class TriageUI:
     override_team: gr.Dropdown
     override_impact: gr.Textbox
     override_safety: gr.Checkbox
-    manual_edit_toggle: gr.Checkbox
-    redacted_text: gr.Textbox
+    redacted_text: gr.Markdown
     routing_logic: gr.Markdown
-    similar_cases: gr.DataFrame
-    gliner_comparison: gr.HighlightedText
-    trad_comparison: gr.HighlightedText
+    active_schema_display: gr.JSON
 
 
 @dataclass
@@ -124,6 +148,8 @@ def analyze_incident(
         gr.Info("Please enter incident text before running analysis.")
         return {
             ui.entity_display: gr.update(),
+            ui.severity_distribution: gr.update(),
+            ui.team_distribution: gr.update(),
             ui.incident_card: gr.update(),
             ui.incident_id_state: gr.update(),
             ui.triage_card_html: format_triage_card_html(
@@ -138,13 +164,11 @@ def analyze_incident(
             ui.override_impact: gr.update(),
             ui.override_safety: gr.update(),
             ui.redacted_text: gr.update(),
-            ui.similar_cases: gr.update(),
             ui.evidence_timeline: gr.update(),
             ui.routing_logic: gr.update(),
             redacted_ui.final_prompt: gr.update(),
             redacted_ui.validation_status: gr.update(),
-            ui.gliner_comparison: gr.update(),
-            ui.trad_comparison: gr.update(),
+            ui.active_schema_display: gr.update(),
         }
 
     try:
@@ -152,6 +176,10 @@ def analyze_incident(
         active_labels = (
             schema_df.filter(pl.col("Active")).get_column("Label Name").to_list()
         )
+        active_schema_with_desc = {
+            label: SCHEMA_DESCRIPTIONS.get(label, "Custom label added by user.")
+            for label in active_labels
+        }
 
         # For simplicity, we'll use these as PII labels if they match common PII types
         pii_candidates = [
@@ -172,7 +200,7 @@ def analyze_incident(
         }
 
         # Run analysis
-        incident, similar_incidents = orchestrator.run_analysis(text, config)
+        incident, _ = orchestrator.run_analysis(text, config)
 
         # 1. Entity Display
         entities = [
@@ -189,12 +217,6 @@ def analyze_incident(
             "entity_count": len(incident.entities),
         }
 
-        # 3. Similar Cases
-        similar_df: list[list[str | float]] = [
-            [f"INC-{i}", 0.85, "Resolved"]  # Mocking some values for display
-            for i, _ in enumerate(similar_incidents)
-        ]
-
         # 4. Evidence Timeline (Mocked for now)
         timeline = "### Evidence Timeline\n"
         for e in incident.entities:
@@ -210,6 +232,19 @@ def analyze_incident(
             f"* Assigned Team: **{incident.team}**"
         )
 
+        # Add some evidence reasoning to routing logic
+        if incident.entities:
+            indicators = [
+                e.text for e in incident.entities if e.label == "Severity Indicator"
+            ]
+            reasons = [
+                e.text for e in incident.entities if e.label == "Assignment Reason"
+            ]
+            if indicators:
+                routing += f"\n\n**Severity Evidence**: _{', '.join(indicators[:2])}_"
+            if reasons:
+                routing += f"\n\n**Routing Evidence**: _{', '.join(reasons[:2])}_"
+
         # 6. Final Prompt Output
         final_prompt_val = {
             "role": "system",
@@ -222,18 +257,12 @@ def analyze_incident(
         # 7. Validation Status
         validation = "SAFE" if incident.is_safe else "UNSAFE - PII LEAK"
 
-        # 8. Baseline Comparison (GLiNER2 vs Traditional NER)
-        # Mocking traditional NER (e.g., only Person and Email)
-        trad_entities = [
-            {"entity": e.label, "start": e.start, "end": e.end}
-            for e in incident.entities
-            if e.label in ["Person", "Email"]
-        ]
-
         incident_id = f"INC-2026-{uuid.uuid4().hex[:4].upper()}"
 
         return {
             ui.entity_display: {"text": text, "entities": entities},
+            ui.severity_distribution: incident.severity_distribution,
+            ui.team_distribution: incident.team_distribution,
             ui.incident_card: incident_card_data,
             ui.incident_id_state: incident_id,
             ui.triage_card_html: format_triage_card_html(
@@ -248,13 +277,11 @@ def analyze_incident(
             ui.override_impact: incident.impact,
             ui.override_safety: incident.is_safe,
             ui.redacted_text: incident.redacted_text,
-            ui.similar_cases: similar_df,
             ui.evidence_timeline: timeline,
             ui.routing_logic: routing,
             redacted_ui.final_prompt: json.dumps(final_prompt_val, indent=2),
             redacted_ui.validation_status: validation,
-            ui.gliner_comparison: {"text": text, "entities": entities},
-            ui.trad_comparison: {"text": text, "entities": trad_entities},
+            ui.active_schema_display: active_schema_with_desc,
         }
 
     except (ValueError, KeyError, TypeError) as e:
@@ -263,6 +290,8 @@ def analyze_incident(
         # Empty updates for all components to satisfy Gradio's expected output count
         return {
             ui.entity_display: gr.update(),
+            ui.severity_distribution: gr.update(),
+            ui.team_distribution: gr.update(),
             ui.incident_card: gr.update(),
             ui.incident_id_state: gr.update(),
             ui.triage_card_html: gr.update(),
@@ -271,19 +300,19 @@ def analyze_incident(
             ui.override_impact: gr.update(),
             ui.override_safety: gr.update(),
             ui.redacted_text: gr.update(),
-            ui.similar_cases: gr.update(),
             ui.evidence_timeline: gr.update(),
             ui.routing_logic: gr.update(),
             redacted_ui.final_prompt: gr.update(),
             redacted_ui.validation_status: gr.update(),
-            ui.gliner_comparison: gr.update(),
-            ui.trad_comparison: gr.update(),
+            ui.active_schema_display: gr.update(),
         }
     except RuntimeError as e:
         logger.exception("Model execution failed during analysis")
         gr.Error(f"Model error: {e!s}")
         return {
             ui.entity_display: gr.update(),
+            ui.severity_distribution: gr.update(),
+            ui.team_distribution: gr.update(),
             ui.incident_card: gr.update(),
             ui.incident_id_state: gr.update(),
             ui.triage_card_html: gr.update(),
@@ -292,13 +321,11 @@ def analyze_incident(
             ui.override_impact: gr.update(),
             ui.override_safety: gr.update(),
             ui.redacted_text: gr.update(),
-            ui.similar_cases: gr.update(),
             ui.evidence_timeline: gr.update(),
             ui.routing_logic: gr.update(),
             redacted_ui.final_prompt: gr.update(),
             redacted_ui.validation_status: gr.update(),
-            ui.gliner_comparison: gr.update(),
-            ui.trad_comparison: gr.update(),
+            ui.active_schema_display: gr.update(),
         }
 
 
@@ -317,13 +344,13 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                 run_btn = gr.Button("Run Analysis", variant="primary")
 
         with gr.Row():
-            # Left Column: Input
+            # Left Column: Input & Redaction
             with gr.Column(scale=1):
                 gr.Markdown("### 1. Input")
                 raw_input = gr.Textbox(
                     label="Raw Text (Logs / Chat / Email)",
                     placeholder="Paste incident raw text here...",
-                    lines=12,
+                    lines=8,
                     elem_id="raw-input-box",
                 )
 
@@ -332,7 +359,14 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                     label="Evidence Timeline",
                 )
 
-            # Center Column: Triage Decision
+                gr.Markdown("### Redaction")
+
+                redacted_text = gr.Markdown(
+                    "*Waiting for analysis...*",
+                    label="Redacted Text",
+                )
+
+            # Center Column: Intelligence
             with gr.Column(scale=1):
                 incident_id_state = gr.State(value="INC-PENDING")
                 gr.Markdown("### 2. Intelligence & Triage")
@@ -350,6 +384,8 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                         "Release Version": "blue",
                         "Feature Flag": "green",
                         "Exception Type": "orange",
+                        "Severity Indicator": "red",
+                        "Assignment Reason": "blue",
                     },
                     combine_adjacent=True,
                     show_legend=True,
@@ -372,10 +408,12 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                     override_severity = gr.Dropdown(
                         choices=SEVERITY_LABELS,
                         label="Manual Severity",
+                        allow_custom_value=True,
                     )
                     override_team = gr.Dropdown(
                         choices=TEAM_LABELS,
                         label="Manual Team",
+                        allow_custom_value=True,
                     )
                     override_impact = gr.Textbox(label="Manual Impact Summary", lines=2)
                     override_safety = gr.Checkbox(
@@ -389,48 +427,30 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                         value={"status": "Awaiting Analysis"},
                     )
 
-            # Right Column: Triage/Output
+            # Right Column: Analysis Results
             with gr.Column(scale=1):
-                gr.Markdown("### 3. Triage & Redaction")
-                with gr.Row():
-                    manual_edit_toggle = gr.Checkbox(
-                        label="Manual Redaction Edit",
-                        value=False,
-                    )
-
-                redacted_text = gr.Textbox(
-                    label="Redacted Text",
-                    lines=10,
-                    interactive=False,
-                    buttons=["copy"],
-                )
-
                 routing_logic = gr.Markdown(
                     "### Routing Logic\n*Analysis not yet performed.*",
                     label="Routing Logic",
                 )
 
-                similar_cases = gr.DataFrame(
-                    headers=["Case ID", "Similarity", "Outcome"],
-                    datatype=["str", "number", "str"],
-                    label="Similar Cases",
-                    interactive=False,
-                    type="polars",
-                )
+                with gr.Column():
+                    gr.Markdown("#### Confidence Distribution")
+                    severity_distribution = gr.Label(
+                        label="Severity Confidence",
+                        num_top_classes=4,
+                    )
+                    team_distribution = gr.Label(
+                        label="Team Routing Confidence",
+                        num_top_classes=5,
+                    )
 
-        with gr.Accordion("Baseline Comparison", open=False), gr.Row():
-            with gr.Column():
-                gr.Markdown("#### GLiNER2 (Zero-shot)")
-                gliner_comparison = gr.HighlightedText(
-                    label="GLiNER2 Output",
-                    show_legend=True,
-                )
-            with gr.Column():
-                gr.Markdown("#### Traditional NER (Static)")
-                trad_comparison = gr.HighlightedText(
-                    label="spaCy / Static Output",
-                    show_legend=True,
-                )
+        with gr.Accordion("Schema Information", open=False), gr.Row(), gr.Column():
+            gr.Markdown("#### Active Model Schema & Configuration")
+            active_schema_display = gr.JSON(
+                label="Input Labels (Schema with Descriptions)",
+                value={},
+            )
 
     return TriageUI(
         case_selector=case_selector,
@@ -438,6 +458,8 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
         raw_input=raw_input,
         evidence_timeline=evidence_timeline,
         entity_display=entity_display,
+        severity_distribution=severity_distribution,
+        team_distribution=team_distribution,
         incident_card=incident_card,
         incident_id_state=incident_id_state,
         triage_card_html=triage_card_html,
@@ -447,12 +469,9 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
         override_team=override_team,
         override_impact=override_impact,
         override_safety=override_safety,
-        manual_edit_toggle=manual_edit_toggle,
         redacted_text=redacted_text,
         routing_logic=routing_logic,
-        similar_cases=similar_cases,
-        gliner_comparison=gliner_comparison,
-        trad_comparison=trad_comparison,
+        active_schema_display=active_schema_display,
     )
 
 
@@ -468,7 +487,11 @@ def create_schema_tab() -> SchemaUI:
                 datatype=["str", "str", "bool"],
                 value=pl.DataFrame(
                     [
-                        {"Label Name": label, "Description": "", "Active": True}
+                        {
+                            "Label Name": label,
+                            "Description": SCHEMA_DESCRIPTIONS.get(label, ""),
+                            "Active": True,
+                        }
                         for label in DEFAULT_ENTITY_LABELS
                     ],
                 ),
@@ -585,6 +608,8 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
             inputs=[triage_ui.raw_input, schema_ui.table],
             outputs=[
                 triage_ui.entity_display,
+                triage_ui.severity_distribution,
+                triage_ui.team_distribution,
                 triage_ui.incident_card,
                 triage_ui.incident_id_state,
                 triage_ui.triage_card_html,
@@ -593,13 +618,11 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
                 triage_ui.override_impact,
                 triage_ui.override_safety,
                 triage_ui.redacted_text,
-                triage_ui.similar_cases,
                 triage_ui.evidence_timeline,
                 triage_ui.routing_logic,
                 redacted_ui.final_prompt,
                 redacted_ui.validation_status,
-                triage_ui.gliner_comparison,
-                triage_ui.trad_comparison,
+                triage_ui.active_schema_display,
             ],
         )
 
@@ -610,17 +633,15 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
         schema_ui.reset_btn.click(
             fn=lambda: pl.DataFrame(
                 [
-                    {"Label Name": label, "Description": "", "Active": True}
+                    {
+                        "Label Name": label,
+                        "Description": SCHEMA_DESCRIPTIONS.get(label, ""),
+                        "Active": True,
+                    }
                     for label in DEFAULT_ENTITY_LABELS
                 ],
             ),
             outputs=[schema_ui.table],
-        )
-
-        triage_ui.manual_edit_toggle.change(
-            fn=lambda x: gr.update(interactive=x),
-            inputs=[triage_ui.manual_edit_toggle],
-            outputs=[triage_ui.redacted_text],
         )
 
     return demo

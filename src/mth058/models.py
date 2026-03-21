@@ -50,7 +50,7 @@ class GlinerClassification(BaseModel):
 class GlinerClassificationResults(BaseModel):
     """Internal model for GLiNER2 classification results dictionary."""
 
-    category: str | GlinerClassification
+    category: list[GlinerClassification]
 
 
 class Incident(BaseModel):
@@ -62,7 +62,9 @@ class Incident(BaseModel):
             (e.g., summary, impact).
         entities (list[Entity]): A list of extracted named entities.
         severity (str): Assessed severity level (e.g., Low, Medium, High, Critical).
+        severity_distribution (dict[str, float]): Confidence distribution for severity.
         team (str): The team assigned to handle the incident.
+        team_distribution (dict[str, float]): Confidence distribution for teams.
         impact (str): The impact summary.
         redacted_text (str): The text with PII removed/masked.
         is_safe (bool): Whether the incident is safe for LLM consumption.
@@ -72,7 +74,9 @@ class Incident(BaseModel):
     sections: dict[str, str] = Field(default_factory=dict)
     entities: list[Entity] = Field(default_factory=list)
     severity: str
+    severity_distribution: dict[str, float] = Field(default_factory=dict)
     team: str
+    team_distribution: dict[str, float] = Field(default_factory=dict)
     impact: str
     redacted_text: str = ""
     is_safe: bool = False

@@ -5,6 +5,7 @@ from importlib.resources import files
 from minijinja import Environment
 
 import mth058.data
+from mth058.ui.theme import _format_label
 
 
 def _load_triage_template() -> str:
@@ -37,17 +38,13 @@ def format_triage_card_html(
         str: A string containing the rendered HTML of the triage card.
     """
     severity_class = f"triage-card-{severity.lower()}"
-    safety_label = "PII SAFE" if is_safe else "UNSAFE LEAK"
-    safety_badge_class = "badge-safety-safe" if is_safe else "badge-safety-unsafe"
 
     return _env.render_template(
         "triage_card",
-        severity=severity,
+        severity=_format_label(severity),
         severity_class=severity_class,
-        team=team,
+        team=_format_label(team),
         impact=impact,
         is_safe=is_safe,
-        safety_label=safety_label,
-        safety_badge_class=safety_badge_class,
         incident_id=incident_id,
     )

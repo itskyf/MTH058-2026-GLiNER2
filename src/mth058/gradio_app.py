@@ -20,23 +20,22 @@ logger = logging.getLogger(__name__)
 # gr.NO_RELOAD is True during `gradio` hot-reload and True in normal `python` execution,
 # so this guard is safe to leave in production.
 if gr.NO_RELOAD:
-    logger.info("Initializing Incident Triage Copilot services...")
-
+    logger.info("Loading heavy resources...")
     _model = get_gliner_model()
     _fixtures = load_sample_incidents()
 
-    _extractor = ExtractorService(model=_model)
-    _classifier = ClassifierService(model=_model)
-    _redactor = RedactorService()
-    _similarity = SimilarityService()
+_extractor = ExtractorService(model=_model)
+_classifier = ClassifierService(model=_model)
+_redactor = RedactorService()
+_similarity = SimilarityService()
 
-    _orchestrator = Orchestrator(
-        extractor=_extractor,
-        classifier=_classifier,
-        redactor=_redactor,
-        similarity=_similarity,
-        fixtures=_fixtures,
-    )
+_orchestrator = Orchestrator(
+    extractor=_extractor,
+    classifier=_classifier,
+    redactor=_redactor,
+    similarity=_similarity,
+    fixtures=_fixtures,
+)
 
 # Build the UI on every reload so layout/theme changes are picked up immediately.
 demo = create_ui(_orchestrator, _fixtures)

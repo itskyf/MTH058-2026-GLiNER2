@@ -23,6 +23,8 @@ class EntityLabel(StrEnum):
     EXCEPTION_TYPE = auto()
     ACCOUNT_ID = auto()
     CUSTOMER_INFO = auto()
+    SEVERITY_INDICATOR = auto()
+    ASSIGNMENT_REASON = auto()
 
 
 class Severity(StrEnum):

@@ -1,0 +1,89 @@
+/* Custom styles for the MTH058 Incident Triage Card */
+
+.triage-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 12px;
+}
+
+.incident-id {
+	font-size: 0.85em;
+	color: #666;
+	margin-left: 8px;
+	font-weight: 500;
+}
+
+.triage-badge {
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 0.8em;
+	font-weight: 600;
+	text-transform: uppercase;
+	display: inline-block;
+}
+
+/* Severity Colors */
+.badge-severity {
+	background-color: #f3f4f6;
+	color: #374151;
+}
+
+/* Safety Badges */
+.badge-safety-safe {
+	background-color: #dcfce7;
+	color: #166534;
+}
+
+.badge-safety-unsafe {
+	background-color: #fee2e2;
+	color: #991b1b;
+}
+
+/* Team Badge */
+.badge-team {
+	background-color: #e0f2fe;
+	color: #075985;
+	font-size: 0.9em;
+	border-radius: 4px;
+}
+
+.triage-card-impact {
+	font-size: 0.95em;
+	line-height: 1.5;
+	border-top: 1px solid #f3f4f6;
+	padding-top: 10px;
+}
+
+/* Legend Styling */
+.triage-legend {
+	margin-top: 20px;
+	padding: 12px;
+	border: 1px #cbd5e1;
+	border-radius: 6px;
+	font-size: 0.8em;
+}
+
+.legend-title {
+	font-weight: bold;
+	margin-bottom: 8px;
+	color: #475569;
+}
+
+.legend-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+}
+
+.legend-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.legend-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}

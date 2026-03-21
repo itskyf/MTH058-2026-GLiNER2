@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from mth058.services.redactor import RedactorService
     from mth058.services.similarity import SimilarityService
 
+CONFIDENCE_THRESHOLD = 0.3
+
 
 class Orchestrator:
     """Coordinates services to analyze and triage incidents."""
@@ -81,8 +83,26 @@ class Orchestrator:
         entities = self.extractor.extract(text, config["extraction_labels"])
 
         # 2. Classify Severity and Team
-        severity = self.classifier.classify(text, config["severity_labels"])
-        team = self.classifier.classify(text, config["team_labels"])
+        severity_dist = self.classifier.classify_with_distribution(
+            text,
+            config["severity_labels"],
+        )
+        team_dist = self.classifier.classify_with_distribution(
+            text,
+            config["team_labels"],
+        )
+
+        severity = "Unknown"
+        if severity_dist:
+            top_sev = max(severity_dist.items(), key=lambda x: x[1])
+            if top_sev[1] >= CONFIDENCE_THRESHOLD:
+                severity = top_sev[0]
+
+        team = "Unknown"
+        if team_dist:
+            top_team = max(team_dist.items(), key=lambda x: x[1])
+            if top_team[1] >= CONFIDENCE_THRESHOLD:
+                team = top_team[0]
 
         # 3. Redact PII
         redacted_text = self.redactor.redact(text, entities, config["pii_labels"])
@@ -98,7 +118,9 @@ class Orchestrator:
             raw_text=text,
             entities=entities,
             severity=severity,
+            severity_distribution=severity_dist,
             team=team,
+            team_distribution=team_dist,
             impact="Yes (Assessed from report)",  # Placeholder
             redacted_text=redacted_text,
             is_safe=is_safe,

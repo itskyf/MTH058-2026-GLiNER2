@@ -30,5 +30,5 @@ def test_format_triage_card_html_unsafe() -> None:
         incident_id="INC-002",
     )
     assert "badge-safety-unsafe" in html
-    assert "UNSAFE LEAK" in html
+    assert "PII LEAK" in html
     assert "triage-card-low" in html

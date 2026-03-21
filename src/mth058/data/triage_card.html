@@ -1,15 +1,37 @@
 <div class="triage-card {{ severity_class }}">
     <div class="triage-card-header">
         <div>
+            <div style="font-size: 0.75em; color: #64748b; margin-bottom: 2px;">SEVERITY</div>
             <span class="triage-badge badge-severity">{{ severity }}</span>
             <span class="incident-id">{{ incident_id }}</span>
         </div>
-        <span class="triage-badge {{ safety_badge_class }}">{{ safety_label }}</span>
+        <div>
+            <div style="font-size: 0.75em; color: #64748b; margin-bottom: 2px; text-align: right;">PRIVACY STATUS</div>
+            <span class="triage-badge {{ 'badge-safety-safe' if is_safe else 'badge-safety-unsafe' }}">
+                {{ 'PII SAFE' if is_safe else 'PII LEAK' }}
+            </span>
+        </div>
     </div>
-    <div style="margin-bottom: 10px;">
+
+    <div style="margin-bottom: 15px; margin-top: 10px;">
+        <div style="font-size: 0.75em; color: #64748b; margin-bottom: 4px;">ASSIGNED TEAM</div>
         <span class="triage-badge badge-team">{{ team }}</span>
     </div>
+
     <div class="triage-card-impact">
-        <strong>Impact Summary:</strong> {{ impact }}
+        <div style="font-size: 0.75em; color: #64748b; margin-bottom: 4px;">IMPACT SUMMARY</div>
+        <div style="color: #1f2937; line-height: 1.4;">{{ impact }}</div>
+    </div>
+
+    <div class="triage-legend">
+        <div class="legend-title">Triage Legend</div>
+        <div class="legend-grid">
+            <div class="legend-item"><div class="legend-dot" style="background-color: #ef4444;"></div> Sev-1 (Critical)</div>
+            <div class="legend-item"><div class="legend-dot" style="background-color: #f97316;"></div> Sev-2 (High)</div>
+            <div class="legend-item"><div class="legend-dot" style="background-color: #f59e0b;"></div> Sev-3 (Medium)</div>
+            <div class="legend-item"><div class="legend-dot" style="background-color: #3b82f6;"></div> Sev-4 (Low)</div>
+            <div class="legend-item"><div class="legend-dot" style="background-color: #dcfce7;"></div> PII Safe</div>
+            <div class="legend-item"><div class="legend-dot" style="background-color: #fee2e2;"></div> PII Leak</div>
+        </div>
     </div>
 </div>

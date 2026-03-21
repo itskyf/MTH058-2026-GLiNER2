@@ -15,7 +15,7 @@ class RedactorService:
         text: str,
         entities: list[Entity],
         pii_labels: list[str],
-        template: str = "[{label}]",
+        template: str = "**[{label}]**",
     ) -> str:
         """Redact entities labeled as PII from the provided text.
 
