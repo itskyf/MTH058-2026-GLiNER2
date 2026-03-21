@@ -1,25 +1,23 @@
 <div class="triage-card {{ severity_class }}">
     <div class="triage-card-header">
-        <div>
-            <div style="font-size: 0.75em; color: #64748b; margin-bottom: 2px;">SEVERITY</div>
+        <div class="triage-header-item">
+            <div class="triage-label">SEVERITY</div>
             <span class="triage-badge badge-severity">{{ severity }}</span>
-            <span class="incident-id">{{ incident_id }}</span>
         </div>
-        <div>
-            <div style="font-size: 0.75em; color: #64748b; margin-bottom: 2px; text-align: right;">PRIVACY STATUS</div>
+        <div class="triage-header-item">
+            <div class="triage-label">PRIVACY STATUS</div>
             <span class="triage-badge {{ 'badge-safety-safe' if is_safe else 'badge-safety-unsafe' }}">
                 {{ 'PII SAFE' if is_safe else 'PII LEAK' }}
             </span>
         </div>
-    </div>
-
-    <div style="margin-bottom: 15px; margin-top: 10px;">
-        <div style="font-size: 0.75em; color: #64748b; margin-bottom: 4px;">ASSIGNED TEAM</div>
-        <span class="triage-badge badge-team">{{ team }}</span>
+        <div class="triage-header-item">
+            <div class="triage-label">ASSIGNED TEAM</div>
+            <span class="triage-badge badge-team">{{ team }}</span>
+        </div>
     </div>
 
     <div class="triage-card-impact">
-        <div style="font-size: 0.75em; color: #64748b; margin-bottom: 4px;">IMPACT SUMMARY</div>
+        <div class="triage-label" style="margin-bottom: 4px;">IMPACT SUMMARY</div>
         <div style="color: #1f2937; line-height: 1.4;">{{ impact }}</div>
     </div>
 

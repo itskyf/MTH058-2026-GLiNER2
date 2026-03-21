@@ -3,15 +3,24 @@
 .triage-card-header {
 	display: flex;
 	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 12px;
+	align-items: flex-start;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #f3f4f6;
 }
 
-.incident-id {
-	font-size: 0.85em;
-	color: #666;
-	margin-left: 8px;
-	font-weight: 500;
+.triage-header-item {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.triage-label {
+	font-size: 0.7em;
+	color: #64748b;
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 }
 
 .triage-badge {
@@ -51,7 +60,6 @@
 .triage-card-impact {
 	font-size: 0.95em;
 	line-height: 1.5;
-	border-top: 1px solid #f3f4f6;
 	padding-top: 10px;
 }
 

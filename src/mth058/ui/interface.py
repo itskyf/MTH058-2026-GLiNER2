@@ -157,7 +157,6 @@ def analyze_incident(
                 "None",
                 "Please enter incident text above.",
                 is_safe=True,
-                incident_id="INC-PENDING",
             ),
             ui.override_severity: gr.update(),
             ui.override_team: gr.update(),
@@ -270,7 +269,6 @@ def analyze_incident(
                 incident.team,
                 incident.impact,
                 is_safe=incident.is_safe,
-                incident_id=incident_id,
             ),
             ui.override_severity: incident.severity,
             ui.override_team: incident.team,
@@ -397,7 +395,6 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                         "None",
                         "Awaiting analysis...",
                         is_safe=True,
-                        incident_id="INC-PENDING",
                     ),
                     label="Triage Card",
                 )
@@ -563,17 +560,15 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
             triage_ui.override_team,
             triage_ui.override_impact,
             triage_ui.override_safety,
-            triage_ui.incident_id_state,
         ]
 
-        for inp in override_inputs[:-1]:  # exclude incident_id_state from triggers
+        for inp in override_inputs:
             inp.change(
-                fn=lambda sev, team, imp, safe, inc_id: format_triage_card_html(
+                fn=lambda sev, team, imp, safe: format_triage_card_html(
                     sev,
                     team,
                     imp,
                     is_safe=safe,
-                    incident_id=inc_id,
                 ),
                 inputs=override_inputs,
                 outputs=[triage_ui.triage_card_html],

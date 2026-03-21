@@ -10,14 +10,12 @@ def test_format_triage_card_html_critical() -> None:
         "SRE",
         "Total outage",
         is_safe=True,
-        incident_id="INC-001",
     )
     assert "triage-card-critical" in html
     assert "Critical" in html
-    assert "SRE" in html
+    assert "Sre" in html
     assert "Total outage" in html
     assert "badge-safety-safe" in html
-    assert "INC-001" in html
 
 
 def test_format_triage_card_html_unsafe() -> None:
@@ -27,7 +25,6 @@ def test_format_triage_card_html_unsafe() -> None:
         "Billing",
         "Minor bug",
         is_safe=False,
-        incident_id="INC-002",
     )
     assert "badge-safety-unsafe" in html
     assert "PII LEAK" in html

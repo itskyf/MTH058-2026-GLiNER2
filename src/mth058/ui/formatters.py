@@ -23,7 +23,6 @@ def format_triage_card_html(
     impact: str,
     *,
     is_safe: bool,
-    incident_id: str,
 ) -> str:
     """Render incident triage data as an HTML card.
 
@@ -32,7 +31,6 @@ def format_triage_card_html(
         team: The assigned response team.
         impact: A summary of the incident's impact.
         is_safe: Boolean indicating if the redaction is safe (no PII leak).
-        incident_id: The unique identifier for the incident.
 
     Returns:
         str: A string containing the rendered HTML of the triage card.
@@ -46,5 +44,4 @@ def format_triage_card_html(
         team=_format_label(team),
         impact=impact,
         is_safe=is_safe,
-        incident_id=incident_id,
     )
