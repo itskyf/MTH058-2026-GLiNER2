@@ -53,6 +53,37 @@ SCHEMA_DESCRIPTIONS = {
     ),
 }
 
+BASE_COLOR_MAP = {
+    "Person": "red",
+    "Email": "blue",
+    "Phone": "green",
+    "Organization": "yellow",
+    "Location": "cyan",
+    "IP Address": "green",
+    "Date": "purple",
+    "Service Name": "cyan",
+    "Release Version": "blue",
+    "Feature Flag": "green",
+    "Tenant Id": "purple",
+    "Exception Type": "orange",
+    "Account Id": "red",
+    "Customer Info": "magenta",
+    "Severity Indicator": "red",
+    "Assignment Reason": "blue",
+}
+
+
+def add_schema_row(df: pl.DataFrame) -> pl.DataFrame:
+    """Add an empty row to the schema Polars DataFrame."""
+    new_row = pl.DataFrame(
+        {
+            "Label Name": ["New Label"],
+            "Description": ["Extract this info..."],
+            "Active": [True],
+        },
+    )
+    return pl.concat([df, new_row])
+
 
 @dataclass
 class TriageUI:
@@ -84,6 +115,7 @@ class SchemaUI:
     """Container for Schema tab components."""
 
     table: gr.DataFrame
+    add_btn: gr.Button
     save_btn: gr.Button
     reset_btn: gr.Button
 
@@ -130,34 +162,97 @@ def sync_redacted_prompt(
     return json.dumps(final_prompt_val, indent=2)
 
 
+def _prepare_analysis_config(schema_df: pl.DataFrame) -> dict:
+    """Prepare the configuration dictionary from the schema DataFrame."""
+    active_rows = schema_df.filter(pl.col("Active"))
+    active_labels = active_rows.get_column("Label Name").to_list()
+
+    schema_with_desc = {}
+    for row in active_rows.to_dicts():
+        name = row["Label Name"]
+        desc = row["Description"].strip()
+        if not desc or desc == "Custom label added by user.":
+            desc = f"Extract {name} from the incident report."
+        schema_with_desc[name] = desc
+
+    pii_candidates = [
+        "Person",
+        "Email",
+        "Phone",
+        "IP Address",
+        "Account Id",
+        "Customer Info",
+    ]
+    pii_labels = [label for label in active_labels if label in pii_candidates]
+
+    return {
+        "extraction_labels": schema_with_desc,
+        "pii_labels": pii_labels,
+        "severity_labels": SEVERITY_LABELS,
+        "team_labels": TEAM_LABELS,
+    }
+
+
+def _format_ui_results(
+    incident: Incident,
+) -> dict:
+    """Format the raw analysis results for UI components."""
+    entities = [
+        {"entity": e.label, "start": e.start, "end": e.end} for e in incident.entities
+    ]
+
+    found_labels = {e["entity"] for e in entities}
+    filtered_color_map = {
+        label: BASE_COLOR_MAP.get(label, "gray") for label in found_labels
+    }
+
+    incident_card_data = {
+        "severity": incident.severity,
+        "team": incident.team,
+        "impact": incident.impact,
+        "is_safe": incident.is_safe,
+        "entity_count": len(incident.entities),
+    }
+
+    final_prompt_val = {
+        "role": "system",
+        "content": (
+            f"Analyze the following redacted incident:\n\n{incident.redacted_text}"
+        ),
+        "metadata": incident_card_data,
+    }
+
+    return {
+        "entities": entities,
+        "color_map": filtered_color_map,
+        "card_data": incident_card_data,
+        "final_prompt": json.dumps(final_prompt_val, indent=2),
+        "validation": "SAFE" if incident.is_safe else "UNSAFE - PII LEAK",
+    }
+
+
 def analyze_incident(
     text: str,
     schema_df: pl.DataFrame,
     orchestrator: Orchestrator,
     ui: TriageUI,
     redacted_ui: RedactedUI,
-) -> dict[
-    gr.components.Component,
-    str | dict[str, str | int | float | bool] | list[list[str | float]],
-]:
-    """Analyze the incident text using the provided orchestrator and schema.
-
-    Returns a dictionary mapping components to their new values.
-    """
+) -> dict:
+    """Analyze the incident text using the provided orchestrator and schema."""
     if not text:
         gr.Info("Please enter incident text before running analysis.")
         return {
-            ui.entity_display: gr.update(),
-            ui.severity_distribution: gr.update(),
-            ui.team_distribution: gr.update(),
-            ui.incident_card: gr.update(),
-            ui.incident_id_state: gr.update(),
             ui.triage_card_html: format_triage_card_html(
                 "Unknown",
                 "None",
                 "Please enter incident text above.",
                 is_safe=True,
             ),
+            ui.entity_display: gr.update(),
+            ui.severity_distribution: gr.update(),
+            ui.team_distribution: gr.update(),
+            ui.incident_card: gr.update(),
+            ui.incident_id_state: gr.update(),
             ui.override_severity: gr.update(),
             ui.override_team: gr.update(),
             ui.override_impact: gr.update(),
@@ -171,52 +266,10 @@ def analyze_incident(
         }
 
     try:
-        # Prepare configuration from Polars DataFrame
-        active_labels = (
-            schema_df.filter(pl.col("Active")).get_column("Label Name").to_list()
-        )
-        active_schema_with_desc = {
-            label: SCHEMA_DESCRIPTIONS.get(label, "Custom label added by user.")
-            for label in active_labels
-        }
-
-        # For simplicity, we'll use these as PII labels if they match common PII types
-        pii_candidates = [
-            "Person",
-            "Email",
-            "Phone",
-            "IP Address",
-            "Account Id",
-            "Customer Info",
-        ]
-        pii_labels = [label for label in active_labels if label in pii_candidates]
-
-        config = {
-            "extraction_labels": active_labels,
-            "pii_labels": pii_labels,
-            "severity_labels": SEVERITY_LABELS,
-            "team_labels": TEAM_LABELS,
-        }
-
-        # Run analysis
+        config = _prepare_analysis_config(schema_df)
         incident, _ = orchestrator.run_analysis(text, config)
 
-        # 1. Entity Display
-        entities = [
-            {"entity": e.label, "start": e.start, "end": e.end}
-            for e in incident.entities
-        ]
-
-        # 2. Incident Card
-        incident_card_data: dict[str, str | int | float | bool] = {
-            "severity": incident.severity,
-            "team": incident.team,
-            "impact": incident.impact,
-            "is_safe": incident.is_safe,
-            "entity_count": len(incident.entities),
-        }
-
-        # 4. Evidence Timeline (Mocked for now)
+        # Evidence Timeline
         timeline = "### Evidence Timeline\n"
         for e in incident.entities:
             if e.label in ["Date", "Time"]:
@@ -224,45 +277,32 @@ def analyze_incident(
         if timeline == "### Evidence Timeline\n":
             timeline += "*No timeline events detected.*"
 
-        # 5. Routing Logic
+        # Routing Logic
         routing = (
-            "### Routing Logic\n"
-            f"* Severity: **{incident.severity}**\n"
+            f"### Routing Logic\n* Severity: **{incident.severity}**\n"
             f"* Assigned Team: **{incident.team}**"
         )
+        indicators = [
+            e.text for e in incident.entities if e.label == "Severity Indicator"
+        ]
+        reasons = [e.text for e in incident.entities if e.label == "Assignment Reason"]
+        if indicators:
+            routing += f"\n\n**Severity Evidence**: _{', '.join(indicators[:2])}_"
+        if reasons:
+            routing += f"\n\n**Routing Evidence**: _{', '.join(reasons[:2])}_"
 
-        # Add some evidence reasoning to routing logic
-        if incident.entities:
-            indicators = [
-                e.text for e in incident.entities if e.label == "Severity Indicator"
-            ]
-            reasons = [
-                e.text for e in incident.entities if e.label == "Assignment Reason"
-            ]
-            if indicators:
-                routing += f"\n\n**Severity Evidence**: _{', '.join(indicators[:2])}_"
-            if reasons:
-                routing += f"\n\n**Routing Evidence**: _{', '.join(reasons[:2])}_"
-
-        # 6. Final Prompt Output
-        final_prompt_val = {
-            "role": "system",
-            "content": (
-                f"Analyze the following redacted incident:\n\n{incident.redacted_text}"
-            ),
-            "metadata": incident_card_data,
-        }
-
-        # 7. Validation Status
-        validation = "SAFE" if incident.is_safe else "UNSAFE - PII LEAK"
-
+        res = _format_ui_results(incident)
         incident_id = f"INC-2026-{uuid.uuid4().hex[:4].upper()}"
 
         return {
-            ui.entity_display: {"text": text, "entities": entities},
+            ui.entity_display: gr.update(
+                value={"text": text, "entities": res["entities"]},
+                label=f"GLiNER2 Intelligence ({len(res['entities'])} entities)",
+                color_map=res["color_map"],
+            ),
             ui.severity_distribution: incident.severity_distribution,
             ui.team_distribution: incident.team_distribution,
-            ui.incident_card: incident_card_data,
+            ui.incident_card: res["card_data"],
             ui.incident_id_state: incident_id,
             ui.triage_card_html: format_triage_card_html(
                 incident.severity,
@@ -277,36 +317,13 @@ def analyze_incident(
             ui.redacted_text: incident.redacted_text,
             ui.evidence_timeline: timeline,
             ui.routing_logic: routing,
-            redacted_ui.final_prompt: json.dumps(final_prompt_val, indent=2),
-            redacted_ui.validation_status: validation,
-            ui.active_schema_display: active_schema_with_desc,
+            redacted_ui.final_prompt: res["final_prompt"],
+            redacted_ui.validation_status: res["validation"],
+            ui.active_schema_display: config["extraction_labels"],
         }
-
-    except (ValueError, KeyError, TypeError) as e:
-        logger.exception("Analysis failed due to data/configuration error")
+    except Exception as e:
+        logger.exception("Analysis failed")
         gr.Error(f"Analysis failed: {e!s}")
-        # Empty updates for all components to satisfy Gradio's expected output count
-        return {
-            ui.entity_display: gr.update(),
-            ui.severity_distribution: gr.update(),
-            ui.team_distribution: gr.update(),
-            ui.incident_card: gr.update(),
-            ui.incident_id_state: gr.update(),
-            ui.triage_card_html: gr.update(),
-            ui.override_severity: gr.update(),
-            ui.override_team: gr.update(),
-            ui.override_impact: gr.update(),
-            ui.override_safety: gr.update(),
-            ui.redacted_text: gr.update(),
-            ui.evidence_timeline: gr.update(),
-            ui.routing_logic: gr.update(),
-            redacted_ui.final_prompt: gr.update(),
-            redacted_ui.validation_status: gr.update(),
-            ui.active_schema_display: gr.update(),
-        }
-    except RuntimeError as e:
-        logger.exception("Model execution failed during analysis")
-        gr.Error(f"Model error: {e!s}")
         return {
             ui.entity_display: gr.update(),
             ui.severity_distribution: gr.update(),
@@ -371,20 +388,7 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
 
                 entity_display = gr.HighlightedText(
                     label="GLiNER2 Extracted Intelligence",
-                    color_map={
-                        "Person": "red",
-                        "Email": "blue",
-                        "IP Address": "green",
-                        "Account Id": "red",
-                        "Customer Info": "magenta",
-                        "Tenant Id": "purple",
-                        "Service Name": "cyan",
-                        "Release Version": "blue",
-                        "Feature Flag": "green",
-                        "Exception Type": "orange",
-                        "Severity Indicator": "red",
-                        "Assignment Reason": "blue",
-                    },
+                    color_map=BASE_COLOR_MAP,
                     combine_adjacent=True,
                     show_legend=True,
                 )
@@ -496,13 +500,21 @@ def create_schema_tab() -> SchemaUI:
                 interactive=True,
                 wrap=True,
                 type="polars",
+                column_count=(3, "fixed"),
+                row_count=(1, "dynamic"),
             )
 
         with gr.Row():
+            add_btn = gr.Button("Add New Label", variant="secondary")
             save_btn = gr.Button("Save Configuration", variant="primary")
             reset_btn = gr.Button("Reset to Defaults")
 
-    return SchemaUI(table=schema_table, save_btn=save_btn, reset_btn=reset_btn)
+    return SchemaUI(
+        table=schema_table,
+        add_btn=add_btn,
+        save_btn=save_btn,
+        reset_btn=reset_btn,
+    )
 
 
 def create_redacted_tab() -> RedactedUI:
@@ -636,6 +648,12 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
                     for label in DEFAULT_ENTITY_LABELS
                 ],
             ),
+            outputs=[schema_ui.table],
+        )
+
+        schema_ui.add_btn.click(
+            fn=add_schema_row,
+            inputs=[schema_ui.table],
             outputs=[schema_ui.table],
         )
 

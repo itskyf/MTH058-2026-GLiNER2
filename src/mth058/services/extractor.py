@@ -9,7 +9,6 @@ limits.
 from functools import lru_cache
 
 from gliner2 import GLiNER2
-
 from mth058.models import Entity, GlinerEntityResults
 
 
@@ -66,12 +65,12 @@ class ExtractorService:
             start += self.chunk_size - self.chunk_overlap
         return chunks
 
-    def extract(self, text: str, labels: list[str]) -> list[Entity]:
+    def extract(self, text: str, labels: list[str] | dict[str, str]) -> list[Entity]:
         """Extracts named entities from the given text using GLiNER2.
 
         Args:
             text (str): The raw text from which to extract entities.
-            labels (list[str]): A list of entity labels to search for.
+            labels: A list of entity labels or a dict mapping labels to descriptions.
 
         Returns:
             list[Entity]: A list of Entity objects representing the extracted entities.
@@ -85,8 +84,7 @@ class ExtractorService:
         current_offset = 0
         for chunk in chunks:
             # The model returns a dict {'entities': {label: [matches]}}
-            # Each match is a dict with 'text', 'start', 'end', 'confidence'
-            # because we pass include_confidence=True and include_spans=True
+            # entity_types can be List[str] or Dict[str, str] (descriptions)
             results_dict = self.model.extract_entities(
                 chunk,
                 labels,

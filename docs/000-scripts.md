@@ -201,32 +201,34 @@ Chỉ vào lần lượt:
 
 ### Thao tác
 
-* Sang **Schema Editor**
-* Thêm một label/field mới, ví dụ:
-  * `rollback_reason`
-  * hoặc `blast_radius`
-* Bấm **Re-run**
+* Sang **Schema Configuration** tab.
+* Ở bảng **Entity Labels**, cuộn xuống cuối và thêm một dòng mới:
+  * Label Name: `Financial Impact`
+  * Description: `Monetary values associated with the incident cost or loss.`
+  * Active: `Checked`
+* Bấm **Save Configuration**.
+* Quay lại **Incident Triage** tab.
+* Đảm bảo đang chọn case **`Duplicate charges after rollout`**.
+* Bấm **Run Analysis**.
 
 ### Lời thoại
 
-> “Bây giờ mình sẽ thêm một field mới ngay lúc demo: `rollback_reason`.  
-> Đây là thứ team vận hành có thể muốn lấy thêm, nhưng không có trong schema ban đầu.”
+> “Bây giờ mình sẽ thêm một field nghiệp vụ cực kỳ quan trọng ngay lúc demo: **`Financial Impact`**.  
+> Thông thường, team kỹ thuật chỉ quan tâm đến log và code, nhưng team quản lý sẽ muốn biết ngay thiệt hại về tiền là bao nhiêu.”
 
 ### Khi kết quả hiện
 
-* Chỉ vào field mới đã xuất hiện
+* Chỉ vào phần **GLiNER2 Extracted Intelligence**: label `Financial Impact` đã xuất hiện và highlight số tiền `$4,500`.
+* Chỉ vào **Incident Card JSON** (nếu đang mở): field mới đã được trích xuất vào cấu trúc dữ liệu.
 
 ### Chốt câu thật rõ
 
-> “Không retrain.  
-> Không đổi model.  
-> Không annotate thêm dữ liệu.  
-> Chỉ đổi schema và chạy lại.” [\[mkabumattar.com\]](https://mkabumattar.com/devtips/post/github-copilot-agent-skills-setup/), [\[github.com\]](https://github.com/obra/superpowers/blob/main/skills/executing-plans/SKILL.md)
+> “Mọi người thấy đó: **Không retrain. Không deploy lại model.**  
+> Mình chỉ vừa định nghĩa thêm một ‘khái niệm’ mới vào schema, và GLiNER2 lập tức hiểu và trích xuất nó từ đoạn chat lộn xộn ban nãy.” [\[mkabumattar.com\]](https://mkabumattar.com/devtips/post/github-copilot-agent-skills-setup/), [\[github.com\]](https://github.com/obra/superpowers/blob/main/skills/executing-plans/SKILL.md)
 
 ### Câu punchline
 
-> “Đây là khoảnh khắc mình muốn mọi người nhớ:  
-> **business labels đổi nhanh hơn tốc độ retrain**, và GLiNER2 giải đúng bài toán đó.”
+> “Đây là sức mạnh của **Zero-shot Information Extraction**: Model đủ thông minh để hiểu label mới dựa trên ngữ nghĩa (semantics), giúp hệ thống thích nghi với yêu cầu business thay đổi chỉ trong vài giây.”
 
 ***
 
