@@ -17,30 +17,31 @@ class EntityLabel(StrEnum):
     IP_ADDRESS = auto()
     DATE = auto()
     SERVICE_NAME = auto()
-    ERROR_MESSAGE = auto()
-    INCIDENT_ID = auto()
+    RELEASE_VERSION = auto()
+    FEATURE_FLAG = auto()
+    TENANT_ID = auto()
+    EXCEPTION_TYPE = auto()
+    ACCOUNT_ID = auto()
+    CUSTOMER_INFO = auto()
 
 
 class Severity(StrEnum):
     """Incident severity levels."""
 
-    CRITICAL = auto()
-    HIGH = auto()
-    MEDIUM = auto()
-    LOW = auto()
-    INFORMATIONAL = auto()
+    SEV_1 = "sev-1"
+    SEV_2 = "sev-2"
+    SEV_3 = "sev-3"
+    SEV_4 = "sev-4"
 
 
 class Team(StrEnum):
     """Assigned teams for incidents."""
 
+    PAYMENTS = auto()
+    MOBILE_AUTH = auto()
+    PLATFORM_INFRASTRUCTURE = auto()
     DEVOPS = auto()
     SECURITY = auto()
-    SRE = auto()
-    FRONTEND = auto()
-    BACKEND = auto()
-    DATA_SCIENCE = auto()
-    COMPLIANCE = auto()
 
 
 def load_custom_css() -> str:

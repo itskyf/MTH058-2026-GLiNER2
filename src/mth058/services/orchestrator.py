@@ -99,7 +99,7 @@ class Orchestrator:
             entities=entities,
             severity=severity,
             team=team,
-            impact="Assessed from report",  # Placeholder
+            impact="Yes (Assessed from report)",  # Placeholder
             redacted_text=redacted_text,
             is_safe=is_safe,
         )

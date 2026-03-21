@@ -5,6 +5,9 @@ _.fnox-env = { tools = true }
 [plugins]
 fnox-env = "https://github.com/jdx/mise-env-fnox"
 
+[tasks."gradio:dev"]
+run = "uv run gradio src/mth058/gradio_app.py"
+
 [tools]
 fnox = "1.15.1"
 prek = { version = "latest", postinstall = "prek install" }

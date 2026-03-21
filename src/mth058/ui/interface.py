@@ -154,7 +154,14 @@ def analyze_incident(
         )
 
         # For simplicity, we'll use these as PII labels if they match common PII types
-        pii_candidates = ["Person", "Email", "Phone", "IP Address"]
+        pii_candidates = [
+            "Person",
+            "Email",
+            "Phone",
+            "IP Address",
+            "Account Id",
+            "Customer Info",
+        ]
         pii_labels = [label for label in active_labels if label in pii_candidates]
 
         config = {
@@ -336,6 +343,13 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                         "Person": "red",
                         "Email": "blue",
                         "IP Address": "green",
+                        "Account Id": "red",
+                        "Customer Info": "magenta",
+                        "Tenant Id": "purple",
+                        "Service Name": "cyan",
+                        "Release Version": "blue",
+                        "Feature Flag": "green",
+                        "Exception Type": "orange",
                     },
                     combine_adjacent=True,
                     show_legend=True,
