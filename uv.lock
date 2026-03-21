@@ -627,12 +627,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-  { name = "gliner2", specifier = ">=1.2.4" },
-  { name = "gradio", specifier = ">=6.9.0" },
-  { name = "minijinja", specifier = ">=2.18.0" },
-  { name = "polars", specifier = ">=1.39.2" },
-  { name = "requests", specifier = ">=2.32.5" },
-  { name = "urllib3", specifier = ">=2.6.3" },
+  { name = "gliner2", specifier = "~=1.2" },
+  { name = "gradio", specifier = "~=6.9" },
+  { name = "minijinja", specifier = "~=2.18" },
+  { name = "polars", specifier = "~=1.39" },
+  { name = "requests", specifier = "~=2.32" },
+  { name = "urllib3", specifier = "~=2.6" },
 ]
 
 [package.metadata.requires-dev]
