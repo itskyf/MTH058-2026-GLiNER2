@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+TUPLE_PAIR_LENGTH = 2
+
+
 class ClassifierService:
     """Service for classifying text attributes using GLiNER2."""
 
@@ -38,7 +41,7 @@ class ClassifierService:
         Returns:
             str: The best matching label, or "Unknown" if no match exceeds threshold.
         """
-        dist = self.classify_with_distribution(text, labels, threshold)
+        dist = self.classify_with_distribution(text, labels, normalize=False)
         if not dist:
             return "Unknown"
 
@@ -53,12 +56,15 @@ class ClassifierService:
         self,
         text: str,
         labels: list[str],
+        *,
+        normalize: bool = False,
     ) -> dict[str, float]:
         """Categorizes text and returns the full probability distribution.
 
         Args:
             text (str): The raw text to classify.
             labels (list[str]): The candidate labels for classification.
+            normalize (bool): Whether to normalize scores to sum to 1.0.
 
         Returns:
             dict[str, float]: A mapping of labels to their confidence scores.
@@ -66,8 +72,6 @@ class ClassifierService:
         if not text or not labels:
             return {}
 
-        # Use classify_text with multi_label=True and cls_threshold=0.0
-        # to get scores for all labels instead of just the ones above default threshold.
         results_dict = self.model.classify_text(
             text,
             {
@@ -77,29 +81,47 @@ class ClassifierService:
                     "cls_threshold": 0.0,
                 },
             },
-            threshold=0.0,  # Get all scores
+            threshold=0.0,
             include_confidence=True,
         )
 
-        # The GLiNER2 engine returns a list of dictionaries when multi_label=True
-        # and include_confidence=True: [{"label": "Sev-1", "confidence": 0.9}, ...]
-        raw_results = results_dict.get("category", [])
+        dist = self._process_raw_results(results_dict.get("category", []), labels)
 
-        if not isinstance(raw_results, list):
-            # Fallback for unexpected format
-            return {}
+        if normalize:
+            total = sum(dist.values())
+            if total > 0:
+                dist = {label: score / total for label, score in dist.items()}
 
-        # Convert list of label/confidence dicts to a flat dict for gr.Label
-        dist = {item["label"]: item["confidence"] for item in raw_results}
+        logger.info(
+            "Classification distribution for labels %s (normalized=%s): %s",
+            labels,
+            normalize,
+            dist,
+        )
+        return dist
+
+    def _process_raw_results(
+        self,
+        raw_results: list | dict,
+        labels: list[str],
+    ) -> dict[str, float]:
+        """Processes raw results into a distribution dictionary."""
+        if isinstance(raw_results, dict):
+            raw_results = [raw_results]
+        elif not isinstance(raw_results, list):
+            logger.warning("Unexpected GLiNER2 result format: %s", type(raw_results))
+            return dict.fromkeys(labels, 0.0)
+
+        dist = {}
+        for item in raw_results:
+            if isinstance(item, dict) and "label" in item and "confidence" in item:
+                dist[item["label"]] = item["confidence"]
+            elif isinstance(item, (list, tuple)) and len(item) == TUPLE_PAIR_LENGTH:
+                # Handle tuple return format (label, confidence)
+                dist[item[0]] = item[1]
 
         # Ensure all requested labels are present (even if 0.0)
         for label in labels:
             if label not in dist:
                 dist[label] = 0.0
-
-        logger.info(
-            "Classification distribution for labels %s: %s",
-            labels,
-            dist,
-        )
         return dist

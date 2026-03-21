@@ -63,35 +63,9 @@
 	padding-top: 10px;
 }
 
-/* Legend Styling */
-.triage-legend {
-	margin-top: 20px;
-	padding: 12px;
-	border: 1px #cbd5e1;
-	border-radius: 6px;
-	font-size: 0.8em;
-}
-
-.legend-title {
-	font-weight: bold;
-	margin-bottom: 8px;
-	color: #475569;
-}
-
-.legend-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 8px;
-}
-
-.legend-item {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-}
-
-.legend-dot {
-	width: 10px;
-	height: 10px;
-	border-radius: 50%;
+/* Hide the prominent top label and score in confidence distribution */
+/* Targeting h2.output-class as identified in Gradio 6 HTML structure */
+.confidence-dist .output-class,
+.confidence-dist [data-testid="label-output-value"] {
+	display: none;
 }

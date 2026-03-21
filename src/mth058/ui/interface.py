@@ -440,10 +440,12 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                     severity_distribution = gr.Label(
                         label="Severity Confidence",
                         num_top_classes=4,
+                        elem_classes=["confidence-dist"],
                     )
                     team_distribution = gr.Label(
                         label="Team Routing Confidence",
                         num_top_classes=5,
+                        elem_classes=["confidence-dist"],
                     )
 
         with gr.Accordion("Schema Information", open=False), gr.Row(), gr.Column():

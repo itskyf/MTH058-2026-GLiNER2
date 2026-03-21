@@ -20,7 +20,7 @@ def mock_model() -> MagicMock:
     }
     # Mocking classify_text for classification
     model.classify_text.return_value = {
-        "category": {"label": "Critical", "confidence": 0.95},
+        "category": [{"label": "Critical", "confidence": 0.95}],
     }
     return model
 

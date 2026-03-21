@@ -83,13 +83,16 @@ class Orchestrator:
         entities = self.extractor.extract(text, config["extraction_labels"])
 
         # 2. Classify Severity and Team
+        # Get raw scores for threshold logic
         severity_dist = self.classifier.classify_with_distribution(
             text,
             config["severity_labels"],
+            normalize=False,
         )
         team_dist = self.classifier.classify_with_distribution(
             text,
             config["team_labels"],
+            normalize=False,
         )
 
         severity = "Unknown"
@@ -103,6 +106,16 @@ class Orchestrator:
             top_team = max(team_dist.items(), key=lambda x: x[1])
             if top_team[1] >= CONFIDENCE_THRESHOLD:
                 team = top_team[0]
+
+        # Normalize distributions for UI display (sum to 100%)
+        def normalize_dict(d: dict[str, float]) -> dict[str, float]:
+            total = sum(d.values())
+            if total > 0:
+                return {k: v / total for k, v in d.items()}
+            return d
+
+        severity_dist_ui = normalize_dict(severity_dist)
+        team_dist_ui = normalize_dict(team_dist)
 
         # 3. Redact PII
         redacted_text = self.redactor.redact(text, entities, config["pii_labels"])
@@ -118,9 +131,9 @@ class Orchestrator:
             raw_text=text,
             entities=entities,
             severity=severity,
-            severity_distribution=severity_dist,
+            severity_distribution=severity_dist_ui,
             team=team,
-            team_distribution=team_dist,
+            team_distribution=team_dist_ui,
             impact="Yes (Assessed from report)",  # Placeholder
             redacted_text=redacted_text,
             is_safe=is_safe,

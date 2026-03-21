@@ -38,6 +38,24 @@ def mock_classifier() -> MagicMock:
     service.classify.side_effect = lambda _text, labels, _threshold=0.3: (
         labels[0] if labels else "Unknown"
     )
+
+    def mock_dist(
+        _text: str,
+        labels: list[str],
+        *,
+        normalize: bool = False,
+    ) -> dict[str, float]:
+        _ = normalize  # Dummy use to satisfy linter
+        if not labels:
+            return {}
+        # Assign 0.9 to first label, split 0.1 among others
+        d = {labels[0]: 0.9}
+        if len(labels) > 1:
+            for i in range(1, len(labels)):
+                d[labels[i]] = 0.1 / (len(labels) - 1)
+        return d
+
+    service.classify_with_distribution.side_effect = mock_dist
     return service
 
 
