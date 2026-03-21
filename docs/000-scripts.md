@@ -102,8 +102,8 @@ GLiNER2 phù hợp cho kịch bản này vì bản Python package hỗ trợ **e
 
 Chỉ vào lần lượt:
 
-* `severity = sev-1`
-* `team = payments`
+* `severity = Critical`
+* `team = Payments`
 * `customer_impact = yes`
 * incident card JSON / key fields
 * extracted entities như:
@@ -163,7 +163,7 @@ Chỉ vào lần lượt:
 
 * Chỉ vào:
   * `Route to: Payments Oncall`
-  * `Escalate: Sev1`
+  * `Escalate: Critical`
   * filter chips như `service`, `exception_type`, `environment`
 
 ### Lời thoại

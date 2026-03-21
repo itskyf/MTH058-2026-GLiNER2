@@ -8,11 +8,11 @@
 			"impact": "Customer overcharged $4,500 total, blowing up support."
 		},
 		"entities": [],
-		"severity": "sev-1",
-		"team": "payments",
+		"severity": "Critical",
+		"team": "Payments",
 		"impact": "Yes (customer overcharged multiple times)",
-		"expected_severity": "sev-1",
-		"expected_team": "payments",
+		"expected_severity": "Critical",
+		"expected_team": "Payments",
 		"expected_customer_impact": "Yes (Enterprise tenant overcharged)",
 		"expected_routing_suggestion": "Billing & Payments Team",
 		"expected_redaction_targets": [
@@ -35,11 +35,11 @@
 			"impact": "400 users unable to log in on iOS 16."
 		},
 		"entities": [],
-		"severity": "sev-1",
-		"team": "mobile auth",
+		"severity": "High",
+		"team": "Mobile Auth",
 		"impact": "400 iOS users blocked from login",
-		"expected_severity": "sev-1",
-		"expected_team": "mobile auth",
+		"expected_severity": "High",
+		"expected_team": "Mobile Auth",
 		"expected_customer_impact": "High (400 users blocked from login)",
 		"expected_routing_suggestion": "Mobile Auth / iOS Team",
 		"expected_redaction_targets": ["sarah_99", "sarah.jenkins@email.com"],
@@ -58,17 +58,68 @@
 			"impact": "Webhook delivery delays for all tenants due to one partitioned partner."
 		},
 		"entities": [],
-		"severity": "sev-2",
-		"team": "platform infrastructure",
+		"severity": "High",
+		"team": "Platform Infrastructure",
 		"impact": "Webhook delays for tenants",
-		"expected_severity": "sev-2",
-		"expected_team": "platform infrastructure",
+		"expected_severity": "High",
+		"expected_team": "Platform Infrastructure",
 		"expected_customer_impact": "Medium (Delayed webhooks, no data loss)",
 		"expected_routing_suggestion": "Data Platform / Infrastructure",
 		"expected_redaction_targets": ["198.51.100.14", "John Smith"],
 		"expected_wow_fields": {
 			"topic_name": "webhook-deliveries",
 			"lag_size": "50,000"
+		}
+	},
+	{
+		"id": "INC-1072",
+		"title": "Database connection pool exhaustion leading to SLA risk",
+		"raw_text": "[08:14] alert-bot: P99 latency for API on Europe-2 region is at 4.5s. [08:15] @dba-team The database connection pool seems exhausted. A few enterprise customers (tenant: acme-corp) reported timeouts on the checkout page. We're scaling up the read replicas now to mitigate, but this might breach our SLA if it continues for another hour. Potential SLA penalty is around 5000 EUR if not resolved quickly. Can someone on the DBA team check the locking queries? I pinged Sarah (sarah.k@system.internal) already.",
+		"sections": {
+			"summary": "Database connection pool exhausted causing API timeouts.",
+			"impact": "Enterprise customers experiencing checkout timeouts. Risk of SLA breach (5000 EUR)."
+		},
+		"entities": [],
+		"severity": "Medium",
+		"team": "Database",
+		"impact": "Medium (API latency, checkout timeouts)",
+		"expected_severity": "Medium",
+		"expected_team": "Database",
+		"expected_customer_impact": "Medium (Enterprise checkout timeouts)",
+		"expected_routing_suggestion": "Database Reliability Engineering",
+		"expected_redaction_targets": [
+			"acme-corp",
+			"Sarah",
+			"sarah.k@system.internal"
+		],
+		"expected_wow_fields": {
+			"service_name": "API",
+			"exception_type": "timeouts",
+			"tenant_id": "acme-corp",
+			"financial_impact": "5000 EUR"
+		}
+	},
+	{
+		"id": "INC-1088",
+		"title": "Internal wiki search returning blank results",
+		"raw_text": "[10:30] A few people from the marketing team reported that the internal wiki search (Confluence instance) is returning blank pages. They can still browse by links. I checked the search indexer logs, and there's an elasticsearch OutOfMemory error. It's not blocking any external customers, but we should probably restart the search pod. Impact is low, internal annoyance mostly. We might spend $50 to upscale the node if this persists, but let's try a simple restart first.",
+		"sections": {
+			"summary": "Internal wiki search fails with blank pages due to OOM.",
+			"impact": "Internal marketing team unable to search wiki. No external impact."
+		},
+		"entities": [],
+		"severity": "Low",
+		"team": "Internal IT",
+		"impact": "Low (internal wiki search impaired)",
+		"expected_severity": "Low",
+		"expected_team": "Internal IT",
+		"expected_customer_impact": "None (Internal tool only)",
+		"expected_routing_suggestion": "Internal IT / Tools Team",
+		"expected_redaction_targets": [],
+		"expected_wow_fields": {
+			"service_name": "Confluence",
+			"exception_type": "OutOfMemory error",
+			"financial_impact": "$50"
 		}
 	}
 ]

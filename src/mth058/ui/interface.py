@@ -108,6 +108,7 @@ class TriageUI:
     redacted_text: gr.Markdown
     routing_logic: gr.Markdown
     active_schema_display: gr.JSON
+    classification_schema_display: gr.JSON
 
 
 @dataclass
@@ -263,6 +264,7 @@ def analyze_incident(
             redacted_ui.final_prompt: gr.update(),
             redacted_ui.validation_status: gr.update(),
             ui.active_schema_display: gr.update(),
+            ui.classification_schema_display: gr.update(),
         }
 
     try:
@@ -320,6 +322,10 @@ def analyze_incident(
             redacted_ui.final_prompt: res["final_prompt"],
             redacted_ui.validation_status: res["validation"],
             ui.active_schema_display: config["extraction_labels"],
+            ui.classification_schema_display: {
+                "Severity Levels": SEVERITY_LABELS,
+                "Target Teams": TEAM_LABELS,
+            },
         }
     except Exception as e:
         logger.exception("Analysis failed")
@@ -341,6 +347,7 @@ def analyze_incident(
             redacted_ui.final_prompt: gr.update(),
             redacted_ui.validation_status: gr.update(),
             ui.active_schema_display: gr.update(),
+            ui.classification_schema_display: gr.update(),
         }
 
 
@@ -454,6 +461,10 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
                 label="Input Labels (Schema with Descriptions)",
                 value={},
             )
+            classification_schema_display = gr.JSON(
+                label="Classification Labels (Severity and Team)",
+                value={},
+            )
 
     return TriageUI(
         case_selector=case_selector,
@@ -475,6 +486,7 @@ def create_triage_tab(fixture_names: list[str]) -> TriageUI:
         redacted_text=redacted_text,
         routing_logic=routing_logic,
         active_schema_display=active_schema_display,
+        classification_schema_display=classification_schema_display,
     )
 
 
@@ -632,6 +644,7 @@ def create_ui(orchestrator: Orchestrator, fixtures: list[Incident]) -> gr.Blocks
                 redacted_ui.final_prompt,
                 redacted_ui.validation_status,
                 triage_ui.active_schema_display,
+                triage_ui.classification_schema_display,
             ],
         )
 

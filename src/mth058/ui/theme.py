@@ -30,10 +30,10 @@ class EntityLabel(StrEnum):
 class Severity(StrEnum):
     """Incident severity levels."""
 
-    SEV_1 = "sev-1"
-    SEV_2 = "sev-2"
-    SEV_3 = "sev-3"
-    SEV_4 = "sev-4"
+    CRITICAL = auto()
+    HIGH = auto()
+    MEDIUM = auto()
+    LOW = auto()
 
 
 class Team(StrEnum):
@@ -44,6 +44,8 @@ class Team(StrEnum):
     PLATFORM_INFRASTRUCTURE = auto()
     DEVOPS = auto()
     SECURITY = auto()
+    DATABASE = auto()
+    INTERNAL_IT = auto()
 
 
 def load_custom_css() -> str:
